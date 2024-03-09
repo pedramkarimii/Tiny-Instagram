@@ -5,10 +5,16 @@ from .views import (
     UserRegisterView,
     UserRegistrationVerifyCodeView,
     UserChangeView, ChangePasswordView,
-
 )
 
-
+""" 
+URL pattern for user login
+URL pattern for user logout
+URL pattern for register a user
+URL pattern for verify a user
+URL pattern for change a user
+URL pattern for change pass user
+"""
 urlpatterns = [
     path("login/", UserLoginView.as_view(), name="login"),
     path("logout/", UserLogoutView.as_view(), name="logout"),
