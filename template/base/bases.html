@@ -1,0 +1,22 @@
+<html lang="en">
+    {% include "base/header.html" %}
+    {% block title %}
+    <title>home</title>
+    {% endblock %}
+    <body>
+        {% include 'base/navbar.html' %}
+        {% include 'base/messages.html' %}
+        {% block change_pass %} {% endblock  %}
+        {% block info_account %} {% endblock  %}
+        {% block Error400 %} {% endblock  %}
+        {% block login %} {% endblock  %}
+        {% block delete_account %} {% endblock  %}
+        {% block delete_user %} {% endblock  %}
+        {% block creat_profile %} {% endblock  %}
+        {% block register %} {% endblock  %}
+        {% block contactus %} {% endblock  %}
+        {% block about %} {% endblock  %}
+        {% block reserve %} {% endblock  %}
+        <footer>{% include "base/footer.html" %}</footer>
+    </body>
+</html>

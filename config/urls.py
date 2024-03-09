@@ -6,9 +6,10 @@ from django.views.generic import TemplateView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("", TemplateView.as_view('home/home.html'), name="home"),
+    path("", TemplateView.as_view(template_name='base/bases.html'), name="home"),
     path("", include("account.urls")),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 admin.site.site_header = 'Social Media'
 admin.site.site_title = 'Social Media Administration'
 admin.site.index_title = 'Welcome To Social Media Administration'

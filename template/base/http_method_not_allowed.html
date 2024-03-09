@@ -1,0 +1,5 @@
+{% extends "base/bases.html" %}
+{% block Error400 %}
+	<h1 class="text-center pt-4 mt-4" >Method not Allowed - 400</h1>
+    <p class="text-center" > {{ request.method }} is not allowed</p>
+{% endblock %}

@@ -1,0 +1,103 @@
+<div class="font-[sans-serif] bg-black py-12 px-10">
+    <div
+        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-8"
+    >
+        <div>
+            <h4 class="text-white text-lg font-bold mb-5">Company</h4>
+            <ul class="space-y-4">
+                <li>
+                    <a
+                        href="javascript:void(0)"
+                        class="text-gray-300 hover:text-white text-sm"
+                        >About Us</a
+                    >
+                </li>
+                <li>
+                    <a
+                        href="javascript:void(0)"
+                        class="text-gray-300 hover:text-white text-sm"
+                        >Contact</a
+                    >
+                </li>
+                <li>
+                    <a
+                        href="javascript:void(0)"
+                        class="text-gray-300 hover:text-white text-sm"
+                        >help</a
+                    >
+                </li>
+            </ul>
+        </div>
+        <div>
+            <h4 class="text-white text-lg font-bold mb-5">Information</h4>
+            <ul class="space-y-4">
+                <li>
+                    <a
+                        href="javascript:void(0)"
+                        class="text-gray-300 hover:text-white text-sm"
+                        >Privacy Policy</a
+                    >
+                </li>
+                <li>
+                    <a
+                        href="javascript:void(0)"
+                        class="text-gray-300 hover:text-white text-sm"
+                        >Terms of Service</a
+                    >
+                </li>
+                <li>
+                    <a
+                        href="javascript:void(0)"
+                        class="text-gray-300 hover:text-white text-sm"
+                    >
+                        Policy</a
+                    >
+                </li>
+            </ul>
+        </div>
+        <div>
+            <h4 class="text-white text-lg font-bold mb-5">Help</h4>
+            <ul class="space-y-4">
+                <li>
+                    <a
+                        href="javascript:void(0)"
+                        class="text-gray-300 hover:text-white text-sm"
+                        >FAQs</a
+                    >
+                </li>
+                <li>
+                    <a
+                        href="javascript:void(0)"
+                        class="text-gray-300 hover:text-white text-sm"
+                        >Shipping Information</a
+                    >
+                </li>
+                <li>
+                    <a
+                        href="javascript:void(0)"
+                        class="text-gray-300 hover:text-white text-sm"
+                        >Returns Exchanges</a
+                    >
+                </li>
+            </ul>
+        </div>
+        <div class="md:col-span-2">
+            <h4 class="text-white text-lg font-bold mb-5">our location</h4>
+            <div class="text-gray-300 mb-4 text-sm">
+                <div id="map" class="h-32 w-39 opacity-95"></div>
+            </div>
+        </div>
+    </div>
+    <p class="text-gray-300 text-right text-sm mt-8">Group 2 © 2024</p>
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+    var map = L.map("map").setView([32.4279, 53.688], 6);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+    }).addTo(map);
+
+    var iranMarker = L.marker([32.4279, 53.688]).addTo(map);
+    iranMarker.bindPopup("<b>Iran</b>").openPopup();
+</script>

@@ -2,10 +2,11 @@ from datetime import datetime
 import pytz
 from django.contrib import messages
 from django.contrib.auth import logout, update_session_auth_hash
+from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy, reverse
 from django.utils import timezone
-from django.views.generic import DetailView
+from django.views.generic import DetailView, DeleteView
 from core.mixin import HttpsOptionMixin as CustomView
 from .forms import UserRegistrationForm, VerifyCodeForm, ProfileChangeOrCreationForm, CustomUserChangeForm, \
     ChangePasswordForm
@@ -19,7 +20,7 @@ class UserLoginView(CustomView, LoginView):
     """
     Handles user login.
     """
-    # template_name = 'profile/login.html' # TODO: creat html
+    template_name = 'accounts/login.html'
     redirect_authenticated_user = True
     http_method_names = ['get', 'post']
     next_page = reverse_lazy('home')
@@ -29,13 +30,13 @@ class UserLoginView(CustomView, LoginView):
         Add a success message after successful login.
         """
         response = super().form_valid(form)
-        if self.request.user.profile.age and self.request.user.profile.full_name:
+        if hasattr(self.request.user, 'profile') and self.request.user.profile.age and self.request.user.profile.name:
             messages.success(self.request, 'You have logged in successfully.', extra_tags='success')
         else:
-            messages.error(self.request,
-                           'Please complete your profile.',
-                           extra_tags='error')
-            return redirect('creat_profile')
+            messages.warning(self.request,
+                             'Please complete your profile.',
+                             extra_tags='warning')
+            return redirect('create_profile')
         return response
 
     def dispatch(self, request, *args, **kwargs):
@@ -43,8 +44,8 @@ class UserLoginView(CustomView, LoginView):
         Redirects authenticated users to the home page with a success message.
         """
         if request.user.is_authenticated:
-            messages.success(
-                request, 'You have already login successfully', extra_tags='success'
+            messages.warning(
+                request, 'You have already login successfully', extra_tags='warning'
             )
             return redirect('home')
 
@@ -85,17 +86,17 @@ class UserLogoutView(CustomView):
 
 class UserRegisterView(CustomView):
     form_class = UserRegistrationForm
-    template_name = 'Account/register.html'
+    template_name = 'accounts/create_user.html'
     http_method_names = ['get', 'post']
 
     def get(self, request):
-        form = self.form_class
+        form = self.form_class()
         return render(request, self.template_name, {'form': form})
 
     def post(self, request):
         form = self.form_class(request.POST)
         if form.is_valid():
-            random_code = random.randint(100000, 999999)
+            random_code = random.randint(1000, 9999)
             send_otp_code(form.cleaned_data['phone_number'], random_code)
 
             OptCode.objects.create(phone_number=form.cleaned_data['phone_number'], code=random_code)
@@ -103,7 +104,7 @@ class UserRegisterView(CustomView):
                 'phone_number': form.cleaned_data['phone_number'],
                 'email': form.cleaned_data['email'],
                 'username': form.cleaned_data['username'],
-                'password': form.cleaned_data['password1'],
+                'password': form.cleaned_data['password2'],
             }
             messages.success(request, 'Code sent to your phone number', extra_tags='success')
             return redirect('verify_code')
@@ -112,7 +113,7 @@ class UserRegisterView(CustomView):
 
 class UserRegistrationVerifyCodeView(CustomView):
     form_class = VerifyCodeForm
-    template_name = 'Account/verifycode.html'
+    template_name = 'accounts/verifycode.html'
     context = {
         'form': form_class
     }
@@ -128,14 +129,14 @@ class UserRegistrationVerifyCodeView(CustomView):
         form = self.form_class(request.POST)
         if form.is_valid():
             cd = form.cleaned_data
-            death_time = code_instance.created + timezone.timedelta(minutes=2)
+            deatht_time = code_instance.created + timezone.timedelta(minutes=2)
 
-            if cd['code'] == code_instance.code and death_time > datetime.now(tz=pytz.timezone('Asia/Tehran')):
+            if cd['code'] == code_instance.code and deatht_time > datetime.now(tz=pytz.timezone('Asia/Tehran')):
                 User.objects.create_user(
                     phone_number=user_session['phone_number'],
                     email=user_session['email'],
-                    full_name=user_session['username'],
-                    password=user_session['password1'],
+                    username=user_session['username'],
+                    password=user_session['password'],
                 )
 
                 code_instance.delete()
@@ -151,8 +152,8 @@ class UserChangeView(CustomView):
     View for changing user information.
     """
     form_class = CustomUserChangeForm
-    template_name = 'user_change.html'
-    success_url = reverse_lazy('change_user')
+    template_name = 'accounts/change_user.html'
+    success_url = reverse_lazy('home')
     http_method_names = ['get', 'post']
 
     def get(self, request, *args, **kwargs):
@@ -189,8 +190,8 @@ class ChangePasswordView(CustomView):
         post: Method to handle POST requests for changing password.
     """
 
-    template_name = 'change_password.html'
-    success_url = reverse_lazy('change_user')
+    template_name = 'accounts/change_password.html'
+    success_url = reverse_lazy('home')
     http_method_names = ['get', 'post']
     form_class = ChangePasswordForm
 
@@ -220,9 +221,9 @@ class ChangePasswordView(CustomView):
         form = self.form_class(request.user, request.POST)
         if form.is_valid():
             user = form.save()
-            update_session_auth_hash(request, user)  # Update session with new hash
+            update_session_auth_hash(request, user)
             messages.success(request, 'Your password was successfully updated!')
-            return redirect(reverse('password_change_done'))
+            return redirect(reverse('home'))
         return render(request, self.template_name, {'form': form})
 
 
@@ -230,7 +231,7 @@ class CreateProfileView(CustomView):
     """
     Handles user profile creation.
     """
-    template_name = 'profile/create_profile.html'  # TODO: creat html
+    template_name = 'accounts/create_profile.html'
     http_method_names = ['get', 'post']
     form_class = ProfileChangeOrCreationForm
 
@@ -238,14 +239,19 @@ class CreateProfileView(CustomView):
         """
         Renders the form for creating a user profile.
         """
-        form = self.form_class(instance=request.user.profile)
+        form = self.form_class(instance=request.user)
         return render(request, self.template_name, {'form': form})
 
     def post(self, request):
         """
         Processes the form submission for creating a user profile.
         """
-        form = self.form_class(request.POST, request.FILES, instance=request.user.profile)
+        try:
+            profile = request.user.profile
+        except Profile.DoesNotExist:
+            profile = None
+
+        form = self.form_class(request.POST, request.FILES, instance=profile)
         if form.is_valid():
             profile = form.save(commit=False)
             profile.user = request.user
@@ -258,7 +264,12 @@ class CreateProfileView(CustomView):
                 'Your profile has been created successfully',
                 extra_tags='success')
             return redirect('home')
-        return render(request, self.template_name, {'form': form})
+        else:
+            messages.error(
+                request,
+                'Your profile has not been created successfully',
+                extra_tags='error')
+            return redirect('create_profile')
 
 
 class ProfileDetailView(DetailView):
@@ -266,8 +277,9 @@ class ProfileDetailView(DetailView):
     Displays user profile details.
     """
     model = Profile
-    # template_name = 'profile/profile_detail.html'
+    template_name = 'accounts/profile_detail.html'
     context_object_name = 'profile'
+    http_method_names = ['get']
 
     def get_object(self, queryset=None):
         """
@@ -275,3 +287,97 @@ class ProfileDetailView(DetailView):
         """
         profile_get_object = Profile.objects.get(user=self.request.user)
         return get_object_or_404(User, pk=self.kwargs['pk']) and profile_get_object
+
+
+# class DeleteProfileView(CustomView):
+#     """
+#     View for soft deleting a user's profile.
+#     """
+#     success_url = reverse_lazy('home')
+#     template_name = 'accounts/delete_account.html'
+#
+#     def post(self, request, *args, **kwargs):
+#         """
+#         Handle POST request to soft delete the user's profile.
+#         """
+#         print('A' * 100)
+#         profile = get_object_or_404(Profile, user=request.user)
+#         print('B'*100)
+#         profile.objects.filter(pk=profile.pk).delete()
+#         messages.success(request, 'Your profile has been successfully deleted.')
+#         return redirect('home')
+#     def get_object(self, queryset=None):
+#         """
+#         Retrieves the profile object for the currently logged-in user.
+#         """
+#         profile_get_object = Profile.objects.get(user=self.request.user)
+#         return get_object_or_404(User, pk=self.kwargs['pk']) and profile_get_object
+#
+
+class DeleteProfileView(DeleteView):
+    """
+    View for deleting a user's profile.
+    """
+    model = Profile
+    success_url = reverse_lazy('home')
+    template_name = 'accounts/delete_account.html'
+    http_method_names = ['get', 'post']
+
+    def delete(self, request, *args, **kwargs):
+        """
+        Handle the deletion of the profile.
+        """
+        self.object = self.get_object()
+        success_url = self.get_success_url()
+        self.object.delete()
+        messages.success(request, 'Your profile has been successfully deleted.')
+        return redirect(success_url)
+
+
+class DeleteUserView(DeleteView):
+    """
+    View for soft deleting a user.
+    """
+    model = User
+    template_name = 'accounts/delete_user.html'
+    success_url = reverse_lazy('home')
+
+    def delete(self, request, *args, **kwargs):
+        """
+        Handle soft deletion of the user.
+        """
+        self.object = self.get_object()
+        success_url = self.get_success_url()
+        self.object.soft_delete.filter(pk=self.object.pk).delete()
+        messages.success(request, 'User has been successfully deleted.')
+        return redirect(success_url)
+
+# class DeleteUserView(CustomView):
+#     """
+#     View for soft deleting a user.
+#     """
+#     template_name = 'accounts/delete_user.html'
+#     http_method_names = ['get', 'post']
+#     success_url = reverse_lazy('home')
+#
+#     def get(self, request, pk):
+#         """
+#         Handle GET request to display the confirmation page for user deletion.
+#         """
+#         user = get_object_or_404(User, pk=pk)
+#         return render(request, self.template_name, {'user': user})
+#
+#     def post(self, request, pk):
+#         """
+#         Handle POST request to soft delete the user.
+#         """
+#         user = get_object_or_404(User, pk=pk)
+#         if user:
+#             user.soft_delete.filter(pk=user.pk).delete()
+#             user.is_deleted = True
+#             user.is_active = False
+#             user.save()
+#             messages.success(request, 'User has been successfully deleted.')
+#         else:
+#             messages.error(request, 'User not found.')
+#         return redirect(self.success_url)

@@ -1,0 +1,22 @@
+{% extends "base/bases.html" %} {% block title %}
+<title>register</title>
+{% endblock %} {% block register %}
+
+<div class="bg-gradient-to-r  from-indigo-500 from-10% via-sky-500 via-30% to-emerald-500 to-90% text-center flex flex-col justify-between ">
+    <form action="" method="post" novalidate>
+
+        <h1 class="text-3xl mt-4 font-bold mb-6">Register Account</h1>
+        <div class="text-gray-800">
+            <div>
+                {% csrf_token %}
+                <p><span class="font-bold  "></span> {{ form.as_p }}</p><br>
+                <input type="submit" value="send"  class="bg-blue-600 text-white mx-2 px-6 py-2 rounded hover:bg-blue-400">
+                <br><br><br><br>
+            </div>
+
+        </div>
+        </form>
+</div>
+
+
+{% endblock %}

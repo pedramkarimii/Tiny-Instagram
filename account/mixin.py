@@ -2,6 +2,8 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from account.managers import UserManager
 from django.db import models
 
+from core.mixin import DeleteManagerMixin
+
 
 class BaseModelUserMixin(AbstractBaseUser, PermissionsMixin):
     """
@@ -42,7 +44,8 @@ class BaseModelUserMixin(AbstractBaseUser, PermissionsMixin):
     is_superuser = models.BooleanField(default=False)
     USERNAME_FIELD = "phone_number"
     REQUIRED_FIELDS = ['username', 'email']
-    objects = UserManager()  # Assuming UserManager is a custom manager class
+    objects = UserManager()
+    soft_delete = DeleteManagerMixin()
 
     class Meta:
         abstract = True

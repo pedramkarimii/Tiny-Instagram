@@ -90,6 +90,7 @@ class User(BaseModelUserMixin):
     email = models.EmailField(max_length=100, unique=True)
     phone_number = models.CharField(max_length=11, unique=True)
 
+
     @property
     def title(self):
         return self.username.title()
@@ -98,6 +99,8 @@ class User(BaseModelUserMixin):
         """Method to return a string representation of the User object."""
         return self.username
 
+    def get_by_natural_key(self, username):
+        return self.get(username=username)
 
 class Profile(models.Model):
     """

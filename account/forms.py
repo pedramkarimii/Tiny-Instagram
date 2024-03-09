@@ -1,7 +1,6 @@
 from ckeditor.fields import RichTextField
 from django.core.exceptions import ValidationError
-from django.contrib.auth.forms import ReadOnlyPasswordHashField, PasswordChangeForm, UserCreationForm, \
-    AuthenticationForm
+from django.contrib.auth.forms import ReadOnlyPasswordHashField, PasswordChangeForm, UserCreationForm
 from account.models import User, OptCode, Profile
 from django import forms
 
@@ -63,7 +62,8 @@ class CleanDataUserForm(UserCreationForm):
         Clean and validate the email field.
 
         Raises:
-            forms.ValidationError: If the email address is already registered, doesn't end with '@gmail.com' or '@yahoo.com',
+            forms.ValidationError: If the email address is already registered,
+             doesn't end with '@gmail.com' or '@yahoo.com',
                 doesn't contain '@', contains spaces, is empty, longer than 254 characters, or doesn't end with '.com'.
         """
         email = self.cleaned_data['email']
@@ -88,15 +88,14 @@ class CleanDataUserForm(UserCreationForm):
         Clean and validate the username field.
 
         Raises:
-            forms.ValidationError: If the username is already registered, less than 5 characters long, or longer than 150 characters.
+            forms.ValidationError: If the username is already registered, less than 5 characters long,
+             or longer than 150 characters.
         """
         username = self.cleaned_data['username']
-        if User.objects.filter(full_name=username).exists():
+        if User.objects.filter(username=username).exists():
             raise forms.ValidationError("This username address is already registered.")
         elif len(username) < 5:
             raise forms.ValidationError("Username must be at least 5 characters long.")
-        elif len(username) > 50:
-            raise forms.ValidationError("Username cannot be longer than 150 characters.")
         return username
 
     def clean_phone_number(self):
@@ -112,116 +111,6 @@ class CleanDataUserForm(UserCreationForm):
             raise forms.ValidationError("This phone number address is already registered.")
 
         return phone_number
-
-
-class AdminCreationForm(CleanDataUserForm):
-    """
-    This class defines a form for creating admin users, extending the CleanDataUserForm.
-
-    Methods:
-        save: Method to save the created user as an admin user.
-
-    Attributes:
-        Constructor method to initialize form fields.
-        Method to save the created user as a regular user.
-    """
-
-    def __init__(self, *args, **kwargs):
-        """
-        Constructor method to initialize form fields.
-
-        Args:
-            *args: Variable length argument list.
-            **kwargs: Arbitrary keyword arguments.
-        """
-        super().__init__(*args, **kwargs)
-        self.fields['is_staff'].initial = True
-        self.fields['is_staff'].widget = forms.HiddenInput()
-        self.fields['is_admin'].initial = True
-        self.fields['is_admin'].widget = forms.HiddenInput()
-
-    def save(self, commit=True):
-        """
-        Save the created user as an admin user.
-
-        Args:
-            commit (bool, optional): Indicates whether to save the user to the database. Defaults to True.
-
-        Returns:
-            User: The created user instance.
-        """
-        user = super().save(commit=False)
-        user.is_staff = True
-        user.is_admin = True
-        if commit:
-            user.save()
-        return user
-
-
-class UserRegistrationForm(CleanDataUserForm):
-    """
-    This class defines a form for user registration, extending the CleanDataUserForm.
-
-    Attributes:
-        inheritance CleanDataUserForm
-
-    Methods:
-        __init__: Constructor method to initialize form fields.
-        save: Method to save the created user as a regular user.
-    """
-
-    def __init__(self, *args, **kwargs):
-        """
-        Constructor method to initialize form fields.
-
-        Args:
-            *args: Variable length argument list.
-            **kwargs: Arbitrary keyword arguments.
-        """
-
-        super().__init__(*args, **kwargs)
-        self.fields['is_staff'].initial = False
-        self.fields['is_staff'].widget = forms.HiddenInput()
-        self.fields['is_admin'].initial = False
-        self.fields['is_admin'].widget = forms.HiddenInput()
-
-    def save(self, commit=True):
-        """
-        Save the created user as a regular user.
-
-        Args:
-            commit (bool, optional): Indicates whether to save the user to the database. Defaults to True.
-
-        Returns:
-            User: The created user instance.
-        """
-        user = super().save(commit=False)
-        user.is_staff = False
-        user.is_admin = False
-        if commit:
-            user.save()
-        return user
-
-
-class UserChangePasswordForm(forms.ModelForm):
-    """
-    This class defines a form for changing user password.
-
-    Attributes:
-        password1 (forms.CharField): Field for entering new password.
-        password2 (forms.CharField): Field for confirming new password.
-
-    Methods:
-        clean_password2: Method to clean and validate the confirmation password field.
-        save: Method to save the changed password.
-
-    """
-    password1 = forms.CharField(label='password', widget=forms.PasswordInput)
-    password2 = forms.CharField(label='confirm_password', widget=forms.PasswordInput)
-
-    class Meta:
-        model = User
-        fields = ('username', 'email', 'phone_number')
 
     def clean_password2(self):
         """
@@ -253,18 +142,62 @@ class UserChangePasswordForm(forms.ModelForm):
             raise forms.ValidationError("Password cannot contain spaces.")
         return password2
 
+
+class AdminCreationForm(CleanDataUserForm):
+    """
+    This class defines a form for creating admin users, extending the CleanDataUserForm.
+
+    Methods:
+        save: Method to save the created user as an admin user.
+
+    Attributes:
+        Constructor method to initialize form fields.
+        Method to save the created user as a regular user.
+    """
+
     def save(self, commit=True):
         """
-        Save the changed password.
+        Save the created user as an admin user.
 
         Args:
             commit (bool, optional): Indicates whether to save the user to the database. Defaults to True.
 
         Returns:
-            User: The user instance with the changed password.
+            User: The created user instance.
         """
         user = super().save(commit=False)
-        user.set_password(self.cleaned_data['password1'])
+        user.is_staff = True
+        user.is_admin = True
+        if commit:
+            user.save()
+        return user
+
+
+class UserRegistrationForm(CleanDataUserForm):
+    """
+    This class defines a form for user registration, extending the CleanDataUserForm.
+
+    Attributes:
+        inheritance CleanDataUserForm
+
+    Methods:
+        __init__: Constructor method to initialize form fields.
+        save: Method to save the created user as a regular user.
+    """
+
+    def save(self, commit=True):
+        """
+        Save the created user as a regular user.
+
+        Args:
+            commit (bool, optional): Indicates whether to save the user to the database. Defaults to True.
+
+        Returns:
+            User: The created user instance.
+        """
+        user = super().save(commit=False)
+        user.is_staff = False
+        user.is_admin = False
         if commit:
             user.save()
         return user
@@ -339,7 +272,7 @@ class ChangePasswordForm(PasswordChangeForm):
         fields = ('old_password', 'new_password1', 'new_password2')
 
 
-class CustomUserChangeForm(UserChangeForm):
+class CustomUserChangeForm(forms.ModelForm):
     """
     This class defines a custom user change form, extending the UserChangeForm.
     """
@@ -350,66 +283,6 @@ class CustomUserChangeForm(UserChangeForm):
         """
         model = User
         fields = ['username', 'email', 'phone_number']
-
-
-class UserLoginForm(AuthenticationForm):
-    """
-    A custom login form for users.
-    """
-    username = forms.CharField(label='Username', max_length=100,
-                               widget=forms.TextInput(attrs={'class': 'form-control'}))
-    password = forms.CharField(label='Password', widget=forms.PasswordInput(attrs={'class': 'form-control'}))
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['username'].widget.attrs.update({'placeholder': 'Enter your username'})
-        self.fields['password'].widget.attrs.update({'placeholder': 'Enter your password'})
-
-    def clean_username(self):
-        """
-        Clean and validate the username field.
-
-        Raises:
-            forms.ValidationError: If the username is already registered, less than 5 characters long, or longer than 150 characters.
-        """
-        username = self.cleaned_data['username']
-        if User.objects.filter(full_name=username).exists():
-            raise forms.ValidationError("This username address is already registered.")
-        elif len(username) < 5:
-            raise forms.ValidationError("Username must be at least 5 characters long.")
-        elif len(username) > 50:
-            raise forms.ValidationError("Username cannot be longer than 150 characters.")
-        return username
-
-    def clean_password2(self):
-        """
-        Clean and validate the confirmation password field.
-
-        Raises:
-            forms.ValidationError: If the passwords don't match or if the password fails the specified criteria.
-        """
-        cleaned_data = super().clean()
-        password1 = cleaned_data.get("password1")
-        password2 = cleaned_data.get("password2")
-        if password1 and password2 and password1 != password2:
-            raise ValidationError("Password don't match")
-        elif len(password1) < 8:
-            raise forms.ValidationError("Password must be at least 8 characters long.")
-        elif password1.isalpha() or password1.isdigit():
-            raise forms.ValidationError("Password must contain at least one letter and one number.")
-        elif not any(char.isdigit() for char in password1):
-            raise forms.ValidationError("Password must contain at least one number.")
-        elif not any(char.isalpha() for char in password1):
-            raise forms.ValidationError("Password must contain at least one letter.")
-        elif not any(char.isupper() for char in password1):
-            raise forms.ValidationError("Password must contain at least one uppercase letter.")
-        elif not any(char.islower() for char in password1):
-            raise forms.ValidationError("Password must contain at least one lowercase letter.")
-        elif not any(char in '!@#$%^&*()_+' for char in password1):
-            raise forms.ValidationError("Password must contain at least one special character.")
-        elif ' ' in password1:
-            raise forms.ValidationError("Password cannot contain spaces.")
-        return password2
 
 
 class ProfileForm(forms.ModelForm):
@@ -506,7 +379,7 @@ class ProfileChangeOrCreationForm(forms.ModelForm):
     age = forms.IntegerField(label='Age', required=False, widget=forms.NumberInput(attrs={'class': 'form-control'}))
     gender = forms.ChoiceField(label='Gender', required=False, choices=[('M', 'Male'), ('F', 'Female')],
                                widget=forms.Select(attrs={'class': 'form-control'}))
-    bio = RichTextField(label='Bio', required=False, config_name='default', )
+    bio = RichTextField(config_name='default', )
     profile_picture = forms.ImageField(label='Profile Picture', required=False,
                                        widget=forms.FileInput(attrs={'class': 'form-control'}))
 
@@ -525,7 +398,7 @@ class ProfileChangeOrCreationForm(forms.ModelForm):
         self.fields['age'].widget.attrs['min'] = 18
         self.fields['profile_picture'].widget.attrs['accept'] = 'image/*'
 
-    def profile_bio(self, user_id, bio_text):
+    def profile_bio(self, user_id, bio_text):  # noqa
         """
         Method to handle updating user's bio.
 
@@ -627,7 +500,7 @@ class VerifyCodeForm(forms.Form):
         clean_code: Method to clean and validate the code field.
 
     """
-    code = forms.IntegerField(label='Code', min_value=100000, max_value=999999,
+    code = forms.IntegerField(label='Code', min_value=1000, max_value=9999,
                               widget=forms.NumberInput(attrs={'autocomplete': 'off'}))
 
     def clean_code(self):
@@ -641,6 +514,6 @@ class VerifyCodeForm(forms.Form):
             forms.ValidationError: If the code is not a 6-digit number.
         """
         code = self.cleaned_data['code']
-        if code < 100000 or code > 999999:
-            raise forms.ValidationError("Code must be a 6-digit number.")
+        if code < 1000 or code > 9999:
+            raise forms.ValidationError("Code must be a 4-digit number.")
         return code
