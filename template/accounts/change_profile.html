@@ -1,0 +1,42 @@
+{% extends "base/bases.html" %}
+{% block title %}
+<title>
+    change account password
+</title>
+{% endblock %}
+
+{% block change_profile %}
+    
+<div class=" bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
+    <div class="p-4 m-4 max-w-md mx-auto bg-white rounded-lg overflow-hidden shadow-md shadow-md rounded shadow-lg bg-opacity-20 shadow-lg backdrop-filter backdrop-blur-lg backdrop-contrast-100 border-black border-opacity-20 rounded-lg">
+        <form class="space-y-4" action="#" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+                {{ form.as_p }}
+{#        <div class="text-center font-semibold text-gray-800 bg-gray-200 p-3">#}
+{#            Change Password#}
+{#        </div>#}
+{#        <div class="p-6">#}
+{#            <form>#}
+{#                <div class="mb-4">#}
+{#                    <label for="currentPassword" class="block text-gray-700 font-semibold mb-2">Current Password</label>#}
+{#                    <input type="password" id="currentPassword" name="currentPassword" placeholder="Enter your current password" class="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:border-blue-500">#}
+{#                </div>#}
+{#                <div class="mb-4">#}
+{#                    <label for="newPassword" class="block text-gray-700 font-semibold mb-2">New Password</label>#}
+{#                    <input type="password" id="newPassword" name="newPassword" placeholder="Enter your new password" class="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:border-blue-500">#}
+{#                </div>#}
+{#                <div class="mb-6">#}
+{#                    <label for="confirmPassword" class="block text-gray-700 font-semibold mb-2">Confirm New Password</label>#}
+{#                    <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm your new password" class="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:border-blue-500">#}
+{#                </div>#}
+                <div class="flex items-center justify-between">
+                    <button
+                            href="{% url 'create_profile' %}"
+                            type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded focus:outline-none focus:shadow-outline">
+                        send edite
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock  %}
