@@ -245,10 +245,13 @@ class CreateProfileView(CustomView):
         """
         Processes the form submission for creating a user profile.
         """
-        form = self.form_class(request.POST, instance=request.user.profile)
+        form = self.form_class(request.POST, request.FILES, instance=request.user.profile)
         if form.is_valid():
             profile = form.save(commit=False)
             profile.user = request.user
+            profile_picture = request.FILES.get('profile_picture')
+            if profile_picture:
+                profile.profile_picture = profile_picture
             profile.save()
             messages.success(
                 request,
