@@ -1,3 +1,4 @@
+from ckeditor.fields import RichTextField
 from django.core.exceptions import ValidationError
 from django.contrib.auth.forms import ReadOnlyPasswordHashField, PasswordChangeForm, UserCreationForm, \
     AuthenticationForm
@@ -491,18 +492,21 @@ class ProfileChangeOrCreationForm(forms.ModelForm):
     This class defines a form for changing or creating user profile information.
 
     Methods:
+         profile_picture: Method to handle profile picture upload.
         clean_age: Method to clean and validate the age field.
         clean_gender: Method to clean and validate the gender field.
         save: Method to save the changes made in the form.
 
     """
-    full_name = forms.CharField(label='Full Name', widget=forms.TextInput(attrs={'class': 'form-control'}))
-    name = forms.CharField(label='Name', widget=forms.TextInput(attrs={'class': 'form-control'}))
-    last_name = forms.CharField(label='Last Name', widget=forms.TextInput(attrs={'class': 'form-control'}))
-    age = forms.IntegerField(label='Age', widget=forms.NumberInput(attrs={'class': 'form-control'}))
-    gender = forms.ChoiceField(label='Gender', choices=[('M', 'Male'), ('F', 'Female')],
+    full_name = forms.CharField(label='Full Name', required=False,
+                                widget=forms.TextInput(attrs={'class': 'form-control'}))
+    name = forms.CharField(label='Name', required=False, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    last_name = forms.CharField(label='Last Name', required=False,
+                                widget=forms.TextInput(attrs={'class': 'form-control'}))
+    age = forms.IntegerField(label='Age', required=False, widget=forms.NumberInput(attrs={'class': 'form-control'}))
+    gender = forms.ChoiceField(label='Gender', required=False, choices=[('M', 'Male'), ('F', 'Female')],
                                widget=forms.Select(attrs={'class': 'form-control'}))
-    bio = forms.CharField(label='Bio', widget=forms.Textarea(attrs={'class': 'form-control'}))
+    bio = RichTextField(label='Bio', required=False, config_name='default', )
     profile_picture = forms.ImageField(label='Profile Picture', required=False,
                                        widget=forms.FileInput(attrs={'class': 'form-control'}))
 
@@ -520,6 +524,47 @@ class ProfileChangeOrCreationForm(forms.ModelForm):
         super(ProfileChangeOrCreationForm, self).__init__(*args, **kwargs)
         self.fields['age'].widget.attrs['min'] = 18
         self.fields['profile_picture'].widget.attrs['accept'] = 'image/*'
+
+    def profile_bio(self, user_id, bio_text):
+        """
+        Method to handle updating user's bio.
+
+        Args:
+            user_id (int): The ID of the user whose bio is being updated.
+            bio_text (str): The new bio text.
+
+        Returns:
+            Profile: The updated profile instance.
+        """
+        profile = Profile.objects.get(user_id=user_id)
+        profile.bio = bio_text
+        profile.save()
+        return profile
+
+    def profile_pictures(self, user_id, commit=True):
+        """
+        Method to handle profile picture upload.
+
+        Args:
+            user_id (int): The ID of the user for whom the profile picture is uploaded.
+            commit (bool, optional): Indicates whether to save the profile to the database. Defaults to True.
+
+        Returns:
+            Profile: The profile instance with the updated profile picture.
+        """
+        # Retrieve the user's profile
+        profile = Profile.objects.get(user_id=user_id)
+
+        # Check if the form has a profile picture file attached
+        if 'profile_picture' in self.files:
+            # Assign the uploaded profile picture to the profile
+            profile.profile_picture = self.files['profile_picture']
+
+            # Save the profile if commit is True
+            if commit:
+                profile.save()
+
+        return profile
 
     def clean_age(self):
         """
