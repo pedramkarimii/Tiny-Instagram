@@ -138,7 +138,7 @@ class Profile(models.Model):
     gender = models.CharField(max_length=20)
     age = models.PositiveSmallIntegerField(default=0)
     bio = RichTextField()
-    profile_picture = models.ImageField(upload_to='media/images/profile_picture/%Y/%m/%d/')
+    profile_picture = models.ImageField(upload_to='profile_picture/%Y/%m/%d/')
     is_deleted = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     create_time = models.DateTimeField(auto_now_add=True, editable=False)
