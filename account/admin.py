@@ -1,6 +1,6 @@
 from django.contrib import admin
 from account.models import User, Profile, OptCode
-from .forms import UserChangeForm, ProfileForm, ChangePasswordForm
+from .forms import UserChangeForm, ProfileForm, UserChangePasswordForm
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 """
@@ -24,7 +24,7 @@ class UserAdmin(BaseUserAdmin):
     Customizes the User admin interface.
     """
     form = UserChangeForm
-    add_form = ChangePasswordForm
+    add_form = UserChangePasswordForm
     model = User
     list_display = ('username', 'email', 'phone_number', 'is_admin', 'is_superuser', 'is_staff', 'is_active')
     list_filter = ('is_admin', 'is_active')
