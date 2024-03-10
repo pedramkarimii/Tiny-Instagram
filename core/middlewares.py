@@ -4,9 +4,17 @@ from django.urls import reverse
 
 LOGIN_EXEMPT_URLS = [
     '/login/',
-    '/register',
+    '/register/',
     '/verify/',
+    '/admin/login/?next=/admin/',
+    # '/login_verify_code/'
     '/',
+]
+AFTER_LOGIN_REDIRECT_URL = [
+    '/login/',
+    '/register/',
+    '/verify/',
+    # '/login_verify_code/'
 ]
 
 
@@ -18,6 +26,9 @@ class LoginRequiredMiddleware:
         if not request.user.is_authenticated and request.path_info not in LOGIN_EXEMPT_URLS:
             messages.warning(request, 'You should login first', extra_tags='warning')
             return HttpResponseRedirect(reverse('login'))
+        elif request.user.is_authenticated and request.path_info in AFTER_LOGIN_REDIRECT_URL:
+            messages.warning(request, 'You should logout first', extra_tags='warning')
+            return HttpResponseRedirect(reverse('home'))
         response = self.get_response(request)
         if response.status_code in [400, 404, 405, 406, 500, 401, 403]:
             messages.error(request, 'An error occurred. Please try again.', extra_tags='error')

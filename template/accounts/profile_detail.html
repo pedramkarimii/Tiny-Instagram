@@ -30,8 +30,8 @@
           <td class="px-4 py-2 text-center">{{ profile.last_name }}</td>
           <td class="px-4 py-2 text-center">{{ profile.gender }}</td>
           <td class="px-4 py-2 text-center">{{ profile.age }}</td>
-          <td class="px-4 py-2 text-center">{{ profile.bio }}</td>
-          <td class="px-4 py-2 text-center"><img src="{{ profile.profile_picture.url }}" alt="profile"></td>
+          <td class="px-4 py-2 text-center">{{ profile.bio | safe }}</td>
+          <td class="px-4 py-2 text-center"><img src="{{ profile.profile_picture.url }}" class="w-16 h-16" alt="profile"></td>
           <td class="px-4 py-2 text-center">{{ profile.create_time }}</td>
           <td class="px-4 py-2 text-center">{{ profile.update_time }}</td>
             {% endif %}

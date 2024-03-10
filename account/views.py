@@ -2,6 +2,8 @@ from datetime import datetime
 import pytz
 from django.contrib import messages
 from django.contrib.auth import logout, update_session_auth_hash
+# from django.contrib.auth import login
+# from .forms import UserLoginForm
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy, reverse
@@ -52,12 +54,71 @@ class UserLoginView(CustomView, LoginView):
         else:
             return super().dispatch(request, *args, **kwargs)
 
+#
+# class UserLoginView(CustomView):
+#     template_name = 'accounts/login.html'
+#     http_method_names = ['get', 'post']
+#     next_page = reverse_lazy('login_verify_code')
+#     form_user_login = UserLoginForm
+#
+#     def get(self, request):
+#         form = self.form_user_login()
+#         return render(request, self.template_name, {'form': form})
+#
+#     def post(self, request):
+#         form = self.form_user_login(request.POST)
+#         if form.is_valid():
+#             phone_number = form.cleaned_data['phone_number']
+#             password = form.cleaned_data['password']
+#             # Authenticate user using built-in User model
+#             user = User.objects.filter(phone_number=phone_number).first()
+#             if user and user.check_password(password):
+#                 random_code = random.randint(1000, 9999)
+#                 send_otp_code(phone_number, random_code)
+#                 OptCode.objects.create(phone_number=form.cleaned_data['phone_number'], code=random_code)
+#                 messages.success(request, ' Code sent to your '
+#                                           f'phone number', extra_tags='success')
+#                 return redirect(self.next_page)
+#             else:
+#                 messages.error(request, f'User not found or password is incorrect', extra_tags='error')
+#                 return redirect('login')
+#         else:
+#             return render(request, self.template_name, {'form': form})
+#
+#
+# class LoginVerifyCodeView(CustomView):
+#     form_class = VerifyCodeForm
+#     template_name = 'accounts/verifycode.html'
+#     context = {
+#         'form': form_class
+#     }
+#     http_method_names = ['get', 'post']
+#
+#     def get(self, request):
+#         form = self.form_class
+#         return render(request, self.template_name, {'form': form})
+#
+#     def post(self, request):
+#         form = self.form_class(request.POST)
+#         if form.is_valid():
+#             cd = form.cleaned_data
+#             code_instance = OptCode.objects.get(phone_number=cd['phone_number'])
+#             deatht_time = code_instance.created + timezone.timedelta(minutes=2)
+#             if deatht_time > datetime.now(pytz.timezone('Asia/Tehran')):
+#                 if code_instance.code == cd['code']:
+#                     messages.success(request, 'Code verified successfully', extra_tags='success')
+#                     login(request, code_instance.user, backend='django.contrib.auth.backends.ModelBackend')
+#                     return redirect('home')
+#                 else:
+#                     messages.error(request, 'Code is not valid', extra_tags='error')
+#                     return redirect('login_verify_code')
+
 
 class UserLogoutView(CustomView):
     """
     Handles user logout.
     """
-    http_method_names = ['get']
+    http_method_names = ['get', 'post']
     success_url = reverse_lazy('home')
 
     def dispatch(self, request, *args, **kwargs):
@@ -81,6 +142,7 @@ class UserLogoutView(CustomView):
         if request.user.is_authenticated:
             logout(self.request)
             messages.success(request, 'Logout successfully', extra_tags='success')
+            request.session.flush()
             return redirect('home')
 
 
@@ -289,31 +351,6 @@ class ProfileDetailView(DetailView):
         return get_object_or_404(User, pk=self.kwargs['pk']) and profile_get_object
 
 
-# class DeleteProfileView(CustomView):
-#     """
-#     View for soft deleting a user's profile.
-#     """
-#     success_url = reverse_lazy('home')
-#     template_name = 'accounts/delete_account.html'
-#
-#     def post(self, request, *args, **kwargs):
-#         """
-#         Handle POST request to soft delete the user's profile.
-#         """
-#         print('A' * 100)
-#         profile = get_object_or_404(Profile, user=request.user)
-#         print('B'*100)
-#         profile.objects.filter(pk=profile.pk).delete()
-#         messages.success(request, 'Your profile has been successfully deleted.')
-#         return redirect('home')
-#     def get_object(self, queryset=None):
-#         """
-#         Retrieves the profile object for the currently logged-in user.
-#         """
-#         profile_get_object = Profile.objects.get(user=self.request.user)
-#         return get_object_or_404(User, pk=self.kwargs['pk']) and profile_get_object
-#
-
 class DeleteProfileView(DeleteView):
     """
     View for deleting a user's profile.
@@ -327,7 +364,7 @@ class DeleteProfileView(DeleteView):
         """
         Handle the deletion of the profile.
         """
-        self.object = self.get_object()
+        self.object = self.get_object() # noqa
         success_url = self.get_success_url()
         self.object.delete()
         messages.success(request, 'Your profile has been successfully deleted.')
@@ -346,38 +383,8 @@ class DeleteUserView(DeleteView):
         """
         Handle soft deletion of the user.
         """
-        self.object = self.get_object()
+        self.object = self.get_object() # noqa
         success_url = self.get_success_url()
         self.object.soft_delete.filter(pk=self.object.pk).delete()
         messages.success(request, 'User has been successfully deleted.')
         return redirect(success_url)
-
-# class DeleteUserView(CustomView):
-#     """
-#     View for soft deleting a user.
-#     """
-#     template_name = 'accounts/delete_user.html'
-#     http_method_names = ['get', 'post']
-#     success_url = reverse_lazy('home')
-#
-#     def get(self, request, pk):
-#         """
-#         Handle GET request to display the confirmation page for user deletion.
-#         """
-#         user = get_object_or_404(User, pk=pk)
-#         return render(request, self.template_name, {'user': user})
-#
-#     def post(self, request, pk):
-#         """
-#         Handle POST request to soft delete the user.
-#         """
-#         user = get_object_or_404(User, pk=pk)
-#         if user:
-#             user.soft_delete.filter(pk=user.pk).delete()
-#             user.is_deleted = True
-#             user.is_active = False
-#             user.save()
-#             messages.success(request, 'User has been successfully deleted.')
-#         else:
-#             messages.error(request, 'User not found.')
-#         return redirect(self.success_url)

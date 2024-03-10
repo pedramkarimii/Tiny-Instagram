@@ -69,7 +69,7 @@
                     <a
                         href="javascript:void(0)"
                         class="text-gray-300 hover:text-white text-sm"
-                        >Shipping Information</a
+                        >Shopping Information</a
                     >
                 </li>
                 <li>
@@ -88,16 +88,16 @@
             </div>
         </div>
     </div>
-    <p class="text-gray-300 text-right text-sm mt-8">Group 2 © 2024</p>
+    <p class="text-gray-300 text-right text-sm mt-8">Pedram Karimi © 2024</p>
 </div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-    var map = L.map("map").setView([32.4279, 53.688], 6);
+    var map = L.map("map").setView([35.715298, 51.404343], 6);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
     }).addTo(map);
 
-    var iranMarker = L.marker([32.4279, 53.688]).addTo(map);
+    var iranMarker = L.marker([35.715298, 51.404343]).addTo(map);
     iranMarker.bindPopup("<b>Iran</b>").openPopup();
 </script>
