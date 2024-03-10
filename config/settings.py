@@ -1,12 +1,9 @@
-
-
 from pathlib import Path
 
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure--^$0i-n0hnkdxdfwb)iua5&3hw)sxck2i69=bu7h)_)_z!n^nl'
@@ -15,7 +12,6 @@ SECRET_KEY = 'django-insecure--^$0i-n0hnkdxdfwb)iua5&3hw)sxck2i69=bu7h)_)_z!n^nl
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -65,7 +61,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
@@ -73,7 +68,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'socialmediadb',
-        'USER':  'pedram',
+        'USER': 'pedram',
         'PASSWORD': 'pedram@karimi',
         'HOST': 'localhost',
         'PORT': '5432',
@@ -87,7 +82,6 @@ CACHES = {
     }
 }
 SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -107,7 +101,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
@@ -122,7 +115,6 @@ USE_TZ = True
 LOGIN_REDIRECT_URL = "/"
 AUTH_USER_MODEL = 'account.User'
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
@@ -134,7 +126,10 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'account.authenticate.EmailAuthBackend',
+]
 CKEDITOR_CONFIGS = {
     'default': {
         'toolbar': 'full',
