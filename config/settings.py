@@ -26,8 +26,10 @@ INSTALLED_APPS = [
     # Local App
     "account.apps.AccountConfig",
     "core.apps.CoreConfig",
+    "post.apps.PostConfig",
     # Third-party App
     'ckeditor',
+
 ]
 
 MIDDLEWARE = [
