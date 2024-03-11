@@ -24,7 +24,7 @@
             {% if request.user.is_authenticated %}
                 <div class="relative">
                 <button class="flex items-center focus:outline-none">
-                    <span class="ms-2 text-sm text-gray-800">{{ user.username }}</span>
+                    <span class="ms-2 text-sm text-gray-300 hover:bg-gray-600 hover:rounded-lg">{{ user.username }}</span>
                     <svg
                             class="w-4 h-4 fill-current"
                             xmlns="http://www.w3.org/2000/svg"
@@ -33,7 +33,7 @@
                 </button>
             {% endif %}
             <div
-                    class="absolute left-5 mt-2 w-48 bg-gray-900 px-4 py-4 bg-opacity-20 shadow-lg backdrop-filter backdrop-blur-lg backdrop-contrast-100 border-black border-opacity-20 rounded-lg  z-10 hidden"
+                    class="absolute left-5 mt-2 w-48 bg-gray-100 px-4 py-4 bg-opacity-20 shadow-lg backdrop-filter backdrop-blur-lg backdrop-contrast-100 border-black border-opacity-20 rounded-lg  z-10 hidden"
             >
 
 
@@ -136,7 +136,7 @@
             class="min-[0px]:hidden max-[720px]:hidden absolute top-1/2 left-1/2 transform -translate-y-1/2 -translate-x-1/2 lg:flex lg:mx-auto lg:flex lg:items-center lg:w-auto lg:space-x-6"
     >
         <li>
-            <a class="text-sm text-gray-800 hover:text-gray-600" href="http://127.0.0.1:8000/"
+            <a class="text-sm text-gray-200 hover:text-gray-800" href="http://127.0.0.1:8000/"
             >Home</a
             >
         </li>
@@ -150,7 +150,7 @@
             ></svg>
         </li>
         <li>
-            <a class="text-sm text-gray-800 hover:text-gray-600" href="http://127.0.0.1:8000/explorer/"
+            <a class="text-sm text-gray-300 hover:text-gray-800" href="http://127.0.0.1:8000/explorer/"
             >Explorer</a
             >
         </li>
@@ -164,7 +164,7 @@
             ></svg>
         </li>
         <li>
-            <a class="text-sm text-gray-800 hover:text-gray-600" href="http://127.0.0.1:8000/contactus/"
+            <a class="text-sm text-gray-700 hover:text-gray-200" href="http://127.0.0.1:8000/contactus/"
             >Contact Us</a
             >
         </li>
@@ -178,7 +178,7 @@
             ></svg>
         </li>
         <li>
-            <a class="text-sm text-gray-800 hover:text-gray-600" href="http://127.0.0.1:8000/aboutus/"
+            <a class="text-sm text-gray-800 hover:text-gray-200" href="http://127.0.0.1:8000/aboutus/"
             >About Us</a
             >
         </li>
@@ -198,11 +198,11 @@
             {% csrf_token %}
             <input
                     type="text"
-                    placeholder="enter your search here"
-                    class="text-sm p-2 rounded-full flex-1 text-gray-700 focus:outline-none bg-gray-200 bg-clip-padding backdrop-filter backdrop-blur-sm bg-opacity-70 border border-gray-100"
+                    placeholder=" enter your search here"
+                    class="text-sm p-2 rounded-full flex-1 text-gray-800 focus:outline-none bg-gray-200 bg-clip-padding backdrop-filter backdrop-blur-sm bg-opacity-70 border border-gray-100"
             />
             <button
-                    class="me-2 ms-2 ps-2 pe-2 bg-gray-200 text-black rounded-full text-sm hover:bg-indigo-400 focus:bg-indigo-600 focus:outline-none"
+                    class="me-2 ms-2 ps-2 pe-2 bg-gray-200 text-gray-800 rounded-full text-sm hover:bg-indigo-400 focus:bg-indigo-600 focus:outline-none"
             >
                 Search
             </button>

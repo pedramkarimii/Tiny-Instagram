@@ -2,12 +2,12 @@
 <title>Info account</title>
 {% endblock %} {% block info_account %}
 
-    <div class="flex justify-center max-w-3xl mx-auto h-32">
-  <div class="overflow-x-auto">
+    <div class="flex justify-center max-w-3xl mb-8 mt-2 mx-auto h-32">
+  <div class="overflow-x-auto mt-2 mb-8">
 
     <table class="table-auto h-full  rounded-lg border border-gray-300">
       <thead>
-        <tr class="bg-gradient-to-r from-gray-500 via-gray-500 to-gray-800   text-white">
+        <tr class="bg-gradient-to-r from-gray-300 via-gray-100  text-gray-700 ">
           <th class="px-4 py-2 text-center"><strong>ID</strong></th>
           <th class="px-4 py-2 text-center"><strong>Full Name</strong></th>
           <th class="px-4 py-2 text-center"><strong>Posts</strong></th>
@@ -22,7 +22,7 @@
       <tbody>
       {% if request.user.is_authenticated %}
       
-        <tr class="bg-gradient-to-r from-gray-500 via-gray-500 to-gray-800   text-white ">
+        <tr class="bg-gradient-to-r from-gray-300 via-gray-100  text-gray-800   ">
           <td class="px-4 py-2 text-center">{{ profile.pk }}</td>
           <td class="px-4 py-2 text-center">{{ profile.full_name }}</td>
           <td class="px-4 py-2 text-center">{{ profile.post_set.count }}</td>
@@ -41,10 +41,14 @@
 
   </div>
     </div>
+    <br><br><br><br>
+    <br><br><br><br>
+    <br><br><br><br>
+    <br><br><br><br>
 
 <style>
     th {
-        border-bottom: 4px solid #bdb1b1; /* Add a solid black border bottom to th elements */
+        border-bottom: 4px solid rgba(118, 118, 118, 0.31); /* Add a solid black border bottom to th elements */
     }
 </style>
 {% endblock %}

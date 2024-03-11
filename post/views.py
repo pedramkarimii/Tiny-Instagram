@@ -1,9 +1,10 @@
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 
 from account.models import User
 # from account.models import User
 from core.mixin import HttpsOptionMixin as CustomView
-from post.forms import UpdatePostForm
+from post.forms import UpdatePostForm, CreatePostForm
 from post.models import Post
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
@@ -36,6 +37,30 @@ class Explorer(CustomView):
         # Pass the user posts list to the template context
         return render(request, self.template_name, {'user_posts': user_posts})
 
+
+class CreatePostView(LoginRequiredMixin, CustomView):
+    template_name = 'post/create_post.html'
+    success_url = reverse_lazy('show_post')
+    form_class = CreatePostForm
+    http_method_names = ['get', 'post']
+
+    def get(self, request):
+        form = self.form_class()  # Assuming you have a PostForm defined
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request):
+        form = self.form_class(request.POST, request.FILES)
+        if form.is_valid():
+            post = form.save(commit=False)
+            post.owner = request.user.profile  # Assuming you have a user profile linked to the post
+            post.save()
+            messages.success(request, 'Post created successfully!')
+            return redirect(self.success_url)
+        else:
+            messages.error(request, 'Failed to create post. Please check the form.')
+            return render(request, self.template_name, {'form': form})
+
+
 class UpdatePostView(CustomView):
     """
     View for updating a post.
@@ -60,7 +85,6 @@ class UpdatePostView(CustomView):
         post = get_object_or_404(Post, pk=pk)
         form = self.form_class(request.POST, request.FILES, instance=post)
         if form.is_valid():
-            print(form.cleaned_data)
             form.save()
             messages.success(request, 'Post updated successfully')
             return redirect(self.success_url)
