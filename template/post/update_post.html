@@ -1,0 +1,28 @@
+{% extends 'base/bases.html' %}
+{% block title %}
+    <title>Sing up</title>
+{% endblock %}
+{% block update_post %}
+    <div class="container max-w-3xl  mx-auto mt-2 mb-2">
+        <div class="bg-gray-300 shadow-lg rounded-md p-6">
+            <h2 class="text-3xl font-semibold text-center mb-6 text-gray-800">Update Post</h2>
+            <form action="" method="post" class="max-w-lg mx-auto space-y-6" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                    {{ form.as_p | safe }}
+                <div>
+                    <button
+                            type="submit"
+                            class="bg-gray-100  text-gray-800 text-center hover:bg-blue-800  font-semibold px-4 py-2 rounded focus:outline-none focus:shadow-outline">
+                        <b> Update</b>
+                    </button>
+
+                    <a class="bg-gray-100 px-4 py-2 text-center text-gray-800  hover:bg-red-800  font-semibold  rounded focus:outline-none focus:shadow-outline" href="{% url 'show_post' %}">
+                                <strong> Cancel</strong> </a>
+
+                </div>
+
+            </form>
+        </div>
+    </div>
+{% endblock %}

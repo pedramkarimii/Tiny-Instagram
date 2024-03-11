@@ -7,14 +7,18 @@ LOGIN_EXEMPT_URLS = [
     '/register/',
     '/verify/',
     '/admin/login/?next=/admin/',
-    # '/login_verify_code/'
-    '/',
+    '/login_verify_code/',
+    '/login_verify/',
+    '/success_login/',
 ]
 AFTER_LOGIN_REDIRECT_URL = [
     '/login/',
     '/register/',
     '/verify/',
-    # '/login_verify_code/'
+    '/admin/login/?next=/admin/',
+    '/login_verify_code/',
+    '/login_verify/',
+    '/success_login/',
 ]
 
 
