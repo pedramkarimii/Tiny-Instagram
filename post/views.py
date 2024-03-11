@@ -1,4 +1,6 @@
 from django.urls import reverse_lazy
+
+from account.models import User
 # from account.models import User
 from core.mixin import HttpsOptionMixin as CustomView
 from post.forms import UpdatePostForm
@@ -16,6 +18,23 @@ class HomePostView(CustomView):
         posts = Post.objects.filter(owner=user.profile)
         return render(request, self.template_name, {'posts': posts})
 
+
+class Explorer(CustomView):
+    template_name = 'explorer/explorer.html'
+    http_method_names = ['get']
+
+    def get(self, request):
+        # Retrieve all users
+        users = User.objects.all()
+        # Create a list to store user posts and their names
+        user_posts = []
+        for user in users:
+            # Retrieve posts for each user
+            posts = Post.objects.filter(owner=user.profile)
+            # Append user's name and their posts to the list
+            user_posts.append({'user': user, 'posts': posts})
+        # Pass the user posts list to the template context
+        return render(request, self.template_name, {'user_posts': user_posts})
 
 class UpdatePostView(CustomView):
     """

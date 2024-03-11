@@ -3,6 +3,8 @@ from django.db import models
 from account.models import Profile, User
 from core.mixin import DeleteManagerMixin
 
+from django.urls import reverse
+
 
 class Post(models.Model):
     owner = models.ForeignKey(Profile, on_delete=models.CASCADE, )
@@ -28,3 +30,5 @@ class Post(models.Model):
             models.UniqueConstraint(fields=['owner', 'title'], name='owner_slug_unique'),
         ]
 
+    def get_absolute_url(self):
+        return reverse('show_post', args={self.id, self.title})
