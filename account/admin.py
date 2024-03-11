@@ -19,6 +19,20 @@ class ProfileInline(admin.StackedInline):
     fk_name = 'user'
 
 
+@admin.register(Profile)
+class ProfileAdmin(admin.ModelAdmin):
+    """
+    Defines admin options for the Profile model.
+    """
+    model = Profile
+    list_display = ('user', 'full_name', 'gender')
+    list_filter = ('user',)
+    search_fields = ('user',)
+    ordering = ('-update_time',)
+    row_id_fields = ('user',)
+
+
+@admin.register(User)
 class UserAdmin(BaseUserAdmin):
     """
     Customizes the User admin interface.
@@ -43,6 +57,7 @@ class UserAdmin(BaseUserAdmin):
             'fields': ('email', 'phone_number', 'username', 'password1', 'password2')}
          ),
     )
+    row_id_fields = ('phone_number',)
     readonly_fields = ('creat_time', 'update_time', 'last_login')
     search_fields = ('email',)
     ordering = ('-creat_time',)
@@ -82,18 +97,13 @@ class UserAdmin(BaseUserAdmin):
         return super(UserAdmin, self).get_inline_instances(request, obj)
 
 
+@admin.register(OptCode)
 class OptCodeAdmin(admin.ModelAdmin):
     """
     Admin configuration for managing OptCode model.
     """
-    list_display = ('code', 'user', 'create_time')
-
-
-""" Register the OptCode model with the admin site """
-admin.site.register(OptCode)
-
-""" Register the User model with the admin site using the customized UserAdmin """
-admin.site.register(User, UserAdmin)
-
-""" Register the Profile model directly with the admin site to manage profiles separately """
-admin.site.register(Profile)
+    model = OptCode
+    list_display = ('code', 'phone_number', 'created')
+    search_fields = ('phone_number',)
+    ordering = ('created',)
+    row_id_fields = ('phone_number',)

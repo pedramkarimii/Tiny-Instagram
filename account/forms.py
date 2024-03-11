@@ -5,13 +5,13 @@ from account.models import User, OptCode, Profile
 from django import forms
 
 
-# class UserLoginForm(forms.Form):
-#     phone_number = forms.CharField(label='Phone Number', max_length=11)
-#     password = forms.CharField(label='Password', widget=forms.PasswordInput)
-#
-#     class Meta:
-#         model = User
-#         fields = ['phone_number', 'password']
+class UserLoginForm(forms.Form):
+    phone_number = forms.CharField(label='Phone Number', max_length=11)
+    password = forms.CharField(label='Password', widget=forms.PasswordInput)
+
+    class Meta:
+        model = User
+        fields = ['phone_number', 'password']
 
 
 class CleanDataUserForm(UserCreationForm):

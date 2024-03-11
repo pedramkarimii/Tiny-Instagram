@@ -2,8 +2,8 @@ from datetime import datetime
 import pytz
 from django.contrib import messages
 from django.contrib.auth import logout, update_session_auth_hash
-# from django.contrib.auth import login
-# from .forms import UserLoginForm
+from django.contrib.auth import login
+from .forms import UserLoginForm
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy, reverse
@@ -18,12 +18,12 @@ from .models import OptCode, User, Profile
 from django.contrib.auth.views import LoginView
 
 
-class UserLoginView(CustomView, LoginView):
+#
+class SuccessLoginView(CustomView, LoginView):
     """
     Handles user login.
     """
-    template_name = 'accounts/login.html'
-    redirect_authenticated_user = True
+    # template_name = 'accounts/login.html'
     http_method_names = ['get', 'post']
     next_page = reverse_lazy('home')
 
@@ -46,72 +46,66 @@ class UserLoginView(CustomView, LoginView):
         Redirects authenticated users to the home page with a success message.
         """
         if request.user.is_authenticated:
-            messages.warning(
-                request, 'You have already login successfully', extra_tags='warning'
-            )
+
             return redirect('home')
 
         else:
             return super().dispatch(request, *args, **kwargs)
 
-#
-# class UserLoginView(CustomView):
-#     template_name = 'accounts/login.html'
-#     http_method_names = ['get', 'post']
-#     next_page = reverse_lazy('login_verify_code')
-#     form_user_login = UserLoginForm
-#
-#     def get(self, request):
-#         form = self.form_user_login()
-#         return render(request, self.template_name, {'form': form})
-#
-#     def post(self, request):
-#         form = self.form_user_login(request.POST)
-#         if form.is_valid():
-#             phone_number = form.cleaned_data['phone_number']
-#             password = form.cleaned_data['password']
-#             # Authenticate user using built-in User model
-#             user = User.objects.filter(phone_number=phone_number).first()
-#             if user and user.check_password(password):
-#                 random_code = random.randint(1000, 9999)
-#                 send_otp_code(phone_number, random_code)
-#                 OptCode.objects.create(phone_number=form.cleaned_data['phone_number'], code=random_code)
-#                 messages.success(request, ' Code sent to your '
-#                                           f'phone number', extra_tags='success')
-#                 return redirect(self.next_page)
-#             else:
-#                 messages.error(request, f'User not found or password is incorrect', extra_tags='error')
-#                 return redirect('login')
-#         else:
-#             return render(request, self.template_name, {'form': form})
-#
-#
-# class LoginVerifyCodeView(CustomView):
-#     form_class = VerifyCodeForm
-#     template_name = 'accounts/verifycode.html'
-#     context = {
-#         'form': form_class
-#     }
-#     http_method_names = ['get', 'post']
-#
-#     def get(self, request):
-#         form = self.form_class
-#         return render(request, self.template_name, {'form': form})
-#
-#     def post(self, request):
-#         form = self.form_class(request.POST)
-#         if form.is_valid():
-#             cd = form.cleaned_data
-#             code_instance = OptCode.objects.get(phone_number=cd['phone_number'])
-#             deatht_time = code_instance.created + timezone.timedelta(minutes=2)
-#             if deatht_time > datetime.now(pytz.timezone('Asia/Tehran')):
-#                 if code_instance.code == cd['code']:
-#                     messages.success(request, 'Code verified successfully', extra_tags='success')
-#                     login(request, code_instance.user, backend='django.contrib.auth.backends.ModelBackend')
-#                     return redirect('home')
-#                 else:
-#                     messages.error(request, 'Code is not valid', extra_tags='error')
-#                     return redirect('login_verify_code')
+
+class UserLoginView(CustomView):
+    template_name = 'accounts/login.html'
+    http_method_names = ['get', 'post']
+    next_page = reverse_lazy('login_verify_code')
+    form_class = UserLoginForm
+
+    def get(self, request):
+        form = self.form_class()
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request):
+        form = self.form_class(request.POST)
+        if form.is_valid():
+            request.session['user_login_info'] = {
+                'phone_number': form.cleaned_data['phone_number'],
+                'password': form.cleaned_data['password'],
+            }
+            random_code = random.randint(1000, 9999)
+            send_otp_code(form.cleaned_data['phone_number'], random_code)
+            OptCode.objects.create(phone_number=form.cleaned_data['phone_number'], code=random_code)
+            messages.success(request, 'Code sent to your phone number', extra_tags='success')
+            return redirect(self.next_page)
+        return render(request, self.template_name, {'form': form})
+
+
+class LoginVerifyCodeView(CustomView):
+    form_class = VerifyCodeForm
+    template_name = 'accounts/verifycode.html'
+    http_method_names = ['get', 'post']
+
+    def get(self, request):
+        form = self.form_class()
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request):
+        user_session = request.session['user_login_info']
+        code_instance = OptCode.objects.get(phone_number=user_session['phone_number'])
+        form = self.form_class(request.POST)
+        if form.is_valid():
+            cd = form.cleaned_data
+            deatht_time = code_instance.created + timezone.timedelta(minutes=2)
+            if cd['code'] == code_instance.code and deatht_time > datetime.now(tz=pytz.timezone('Asia/Tehran')):
+                if code_instance:
+                    user = User.objects.get(phone_number=code_instance.phone_number)
+                    login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+                    code_instance.delete()
+                    messages.success(request, 'Code verified successfully', extra_tags='success')
+                    return redirect('success_login')
+                return redirect('home')
+
+            else:
+                messages.error(request, 'Code is not valid', extra_tags='error')
+                return redirect('login_verify_code')
 
 
 class UserLogoutView(CustomView):
@@ -364,7 +358,7 @@ class DeleteProfileView(DeleteView):
         """
         Handle the deletion of the profile.
         """
-        self.object = self.get_object() # noqa
+        self.object = self.get_object()  # noqa
         success_url = self.get_success_url()
         self.object.delete()
         messages.success(request, 'Your profile has been successfully deleted.')
@@ -383,7 +377,7 @@ class DeleteUserView(DeleteView):
         """
         Handle soft deletion of the user.
         """
-        self.object = self.get_object() # noqa
+        self.object = self.get_object()  # noqa
         success_url = self.get_success_url()
         self.object.soft_delete.filter(pk=self.object.pk).delete()
         messages.success(request, 'User has been successfully deleted.')

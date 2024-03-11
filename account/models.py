@@ -90,7 +90,6 @@ class User(BaseModelUserMixin):
     email = models.EmailField(max_length=100, unique=True)
     phone_number = models.CharField(max_length=11, unique=True)
 
-
     @property
     def title(self):
         return self.username.title()
@@ -99,8 +98,9 @@ class User(BaseModelUserMixin):
         """Method to return a string representation of the User object."""
         return self.username
 
-    def get_by_natural_key(self, username):
-        return self.get(username=username)
+    # def get_by_natural_key(self, username):
+    #     return self.get(username=username)
+
 
 class Profile(models.Model):
     """
@@ -152,8 +152,7 @@ class Profile(models.Model):
         ordering = ["-update_time"]
         verbose_name = 'Profile'
         verbose_name_plural = 'Profiles'
-        unique_together = ['user', 'full_name']
-        index_together = [['user', 'full_name']]
+
         constraints = [
             models.UniqueConstraint(fields=['user', 'full_name'], name='unique_user_full_name')
         ]

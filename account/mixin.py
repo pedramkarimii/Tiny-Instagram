@@ -52,3 +52,4 @@ class BaseModelUserMixin(AbstractBaseUser, PermissionsMixin):
         ordering = ['-update_time', 'is_deleted']
         verbose_name = 'user'
         verbose_name_plural = 'users'
+
