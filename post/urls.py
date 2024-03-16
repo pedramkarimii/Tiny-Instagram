@@ -6,7 +6,6 @@ urlpatterns = [
     path('createpost/', CreatePostView.as_view(), name='create_post'),
     path('show_post/<int:pk>/', HomePostView.as_view(), name='show_post'),
     path("explorer/<int:pk>/", Explorer.as_view(), name="explorer"),
-
     path('follow/<int:user_id>/', FollowUserView.as_view(), name='follow_user'),
     path('unfollow/<str:user_id>/', UnfollowUserView.as_view(), name='unfollow_user'),
 

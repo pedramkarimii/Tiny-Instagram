@@ -17,7 +17,10 @@
                                  src="{{ user.profile.profile_picture.url }}"
                                  alt="Profile Picture">
                             <div>
-                                <h2 class="text-lg font-semibold text-gray-800">{{ user.username }}</h2>
+                                <h2 class="text-lg font-semibold text-gray-800"><a
+                                        href="{% url 'profile_detail' pk=user.profile.user_id %}">{{ user.username }} </a>
+                                </h2>
+                                {#                                <h2 class="text-lg font-semibold text-gray-800">{{ user.username }}</h2>#}
                                 <p class="text-sm text-gray-600">{{ user.profile.bio | safe }}</p>
                             </div>
 
@@ -125,40 +128,45 @@
                 <hr>
                 <div class="comments-container">
                     {% for comment in post.comment_set.all %}
-                        {% if comment.is_reply == False %}
+                        {#                        {% if comment.is_reply == False %}#}
 
 
-                            <div class="comment-item border-t border-gray-200">
-                                <div class="comment-meta px-6 py-4 flex justify-between items-center">
-                                    <p class="text-gray-800">
-                                        <span class="comment-owner"> @{{ comment.owner }}</span></p>
-                                    <p class="text-gray-800">
 
-                                        <span class="comment-time">{{ comment.create_time | timesince }}</span>
-                                    </p>
-                                </div>
-                                <div class="comment-body px-6 py-4">
-                                    <p class="text-gray-800">{{ comment.comments | safe }}</p>
-                                </div>
+
+                        <div class="comment-item border-t border-gray-200">
+                            <div class="comment-meta px-6 py-4 flex justify-between items-center">
+                                <p class="text-gray-800">
+                                    <span class="comment-owner"> @{{ comment.owner }}</span></p>
+                                <p class="text-gray-800">
+
+                                    <span class="comment-time">{{ comment.create_time | timesince }}</span>
+                                </p>
                             </div>
-                        {% endif %}
+                            <div class="comment-body px-6 py-4">
+                                <p class="text-gray-800">{{ comment.comments | safe }}</p>
+                            </div>
+                        </div>
+                        {#                        {% endif %}#}
                     {% empty %}
                         <p class="mt-4 ml-4 text-gray-800">No comment yet!</p>
 
                     {% endfor %}
-                <div class=" ml-4 mb-2 comment-item border-t border-gray-200">
+                    <div class=" ml-4 mb-2 comment-item border-t border-gray-200">
 
-                <form method="post" action="{% url 'show_post'  post.id  %}">
+                        <form method="post" action="{% url 'show_post'  post.id %}">
                             {% csrf_token %}
-                     <p  class="ml-4 px-6 ">{{ form.as_p }}</p>
-                    <a href="{% url 'show_post' post.id   %}">
-                    <button class="text-gray-600 font-semibold ml-16 mb-4 mt-4  mr-4 flex items-center">
-                            <span>Send Comment</span>
-                            <span class="text-sm pl-2"></span>
-                        </button></a>
+                            <p class=" mt-4 mb-4">Create Comment{{ form.comments }}</p>
 
-                                </form>
-                </div>
+                            <p class="mt-4">Reply {{ form.is_reply }} </p>
+                            <p class="mt-2">{{ form.reply }}</p>
+{#                            <a href="{% url 'explorer' post.id %}">#}
+                                <button class="text-gray-800 font-semibold ml-56 mb-4 mt-4  mr-4 flex items-center">
+                                    <span>Send Comment</span>
+                                    <span class="text-sm pl-2"></span>
+                                </button>
+
+                        </form>
+                    </div>
                 </div>
 
 

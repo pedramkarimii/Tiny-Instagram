@@ -30,11 +30,12 @@ class CreatCommentForm(forms.ModelForm):
     """
     Form for creating a comment.
     """
+
     # body = RichTextField(config_name='default', )
 
     class Meta:
         model = Comment
-        fields = ('comments','reply')
+        fields = ('comments', 'reply', 'is_reply')
 
     def clean_body(self):
         body = self.cleaned_data.get('body')

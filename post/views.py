@@ -1,6 +1,8 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count
 from django.urls import reverse_lazy
+from django.views.generic import DetailView
+
 from account.models import User, Profile
 from core.mixin import HttpsOptionMixin as CustomView
 from post.forms import UpdatePostForm, CreatCommentForm
@@ -77,28 +79,6 @@ class Explorer(CustomView):
             return redirect(self.get_success_url())
 
         return render(request, self.template_name, {'form': form})
-
-
-# class CreatCommentView(CustomView):
-#     template_name = 'explorer/explorer.html'
-#     success_url = reverse_lazy('explorer')
-#     http_method_names = ['get', 'post']
-#     form_class = CreatCommentForm
-#
-#     def get(self, request, *args, **kwargs):
-#         # Handle GET requests here if needed
-#         return redirect(self.success_url)
-#
-#     def post(self, request, *args, **kwargs):
-#         user_id = kwargs.get('user_id')
-#         post_id = kwargs.get('post_id')
-#         comment_text = request.POST.get('comment')
-#         post = Post.objects.get(pk=post_id)
-#         user = User.objects.get(pk=user_id)
-#         comment = Comment.objects.create(owner=user.profile, post=post, comment=comment_text)
-#         comment.save()
-#         messages.success(request, f"You have commented on {post.title}")
-#         return redirect(self.success_url)
 
 
 class FollowUserView(CustomView):
