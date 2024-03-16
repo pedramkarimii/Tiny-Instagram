@@ -62,3 +62,27 @@ class Post(models.Model):
     def dislike_count(self):
         return Profile.objects.filter(post_dislikes=self).count()
 
+
+class Comment(models.Model):
+    owner = models.ForeignKey(Profile, on_delete=models.CASCADE, related_query_name='user_comments')
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_query_name='posta_comments')
+    reply = models.ForeignKey('self', on_delete=models.CASCADE, related_query_name='reply_comments', blank=True,
+                              null=True)
+    is_reply = models.BooleanField(default=False)
+    body = RichTextField()
+    is_deleted = models.BooleanField(default=False)
+    delete_time = models.DateTimeField(auto_now=True, editable=False)
+    create_time = models.DateTimeField(auto_now_add=True, editable=False)
+    update_time = models.DateTimeField(auto_now=True, editable=False)
+
+    def __str__(self):
+        return f'{self.owner} - {self.post} - {self.update_time}'
+
+    class Meta:
+        ordering = ['-create_time']
+        verbose_name = 'Comment'
+        verbose_name_plural = 'Comments'
+        get_latest_by = '-create_time'
+        constraints = [
+            models.UniqueConstraint(fields=['owner', 'post'], name='owner_post_unique')
+        ]
