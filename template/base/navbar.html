@@ -166,7 +166,9 @@
             ></svg>
         </li>
         <li>
-            <a class="text-sm text-gray-300 hover:text-gray-800" href="http://127.0.0.1:8000/explorer/"
+            <a class="text-sm text-gray-300 hover:text-gray-800"
+               href="{% url 'explorer' pk=user.pk %}"
+               onclick="redirectToExplore({{ user.pk }})"
             >Explorer</a
             >
         </li>
@@ -457,6 +459,9 @@
 
     function redirectToChangeProfile() {
         window.location.href = "{% url 'create_profile' %}";
+    }
+    function redirectToExplore(id) {
+        window.location.href = `explorer/${id}/`;
     }
     function redirectToPost(id) {
         window.location.href = `show_post/${id}/`;

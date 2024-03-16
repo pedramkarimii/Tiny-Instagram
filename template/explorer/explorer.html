@@ -119,10 +119,10 @@
                     {% endfor %}
                 <div class=" ml-4 mb-2 comment-item border-t border-gray-200">
 
-                <form method="post" action="{% url 'show_post'  post.id  %}">
+                <form method="post" action="{% url 'explorer'  post.id  %}">
                             {% csrf_token %}
                      <p  class="ml-4 px-6 ">{{ form.as_p }}</p>
-                    <a href="{% url 'show_post' post.id   %}">
+                    <a href="{% url 'explorer' post.id   %}">
                     <button class="text-gray-600 font-semibold ml-16 mb-4 mt-4  mr-4 flex items-center">
                             <span>Send Comment</span>
                             <span class="text-sm pl-2"></span>
