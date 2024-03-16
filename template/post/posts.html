@@ -6,11 +6,11 @@
     {% for post in posts %}
 
 
-        <div class="max-w-3xl mx-auto">
+        <div class="max-w-3xl  mx-auto">
             <!-- Single Post -->
-            <div class=" bg-gradient-to-r from-gray-300 via-gray-100 opacity-25shadow-lg rounded-lg overflow-hidden mb-8 mt-4">
+            <div class=" bg-gradient-to-r  from-gray-300 via-gray-100  shadow-lg rounded-lg overflow-hidden mb-8 mt-4">
                 <!-- Header -->
-                <div class="px-6 py-4 border-b border-gray-200">
+                <div class="px-6 py-4  border-b border-gray-200">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center">
                             <img class="w-12 h-12 object-cover rounded-full mr-4"
@@ -22,18 +22,33 @@
                             </div>
 
                         </div>
-                        <div>
-                            <button class="text-blue-600 font-semibold mr-2">Follow</button>
-                            <button class="text-gray-600 font-semibold">Unfollow</button>
-                        </div>
+{#                        <div>#}
+{#                                {% if not request.user.profile == user_post.user.profile %}#}
+{#                                    {% if request.user.profile in user_post.user.followers.all %}#}
+{#                                        <form action="{% url 'unfollow_user' user_post.user.id %}" method="post">#}
+{#                                            {% csrf_token %}#}
+{#                                            <button type="submit" class="text-gray-600 font-semibold">Unfollow</button>#}
+{#                                        </form>#}
+{#                                    {% else %}#}
+{#                                        <form action="{% url 'follow_user' user.id %}" method="post">#}
+{#                                            {% csrf_token %}#}
+{#                                            <button type="submit" class="text-blue-600 font-semibold">Follow</button>#}
+{#                                        </form>#}
+{#                                    {% endif %}#}
+{#                                {% endif %}#}
+{#                            </div>#}
                     </div>
                 </div>
                 <!-- Content -->
                 <div class="px-6 py-4">
                     <div class="flex justify-center">
-                        <img class="mt-4 w-64 h-64 object-cover rounded-lg" src="{{ post.post_picture.url }}"
-                             alt="Post Image{{ user.username }}">
+                        {% if post.post_picture  %}
+                            <img class="mt-4 w-64 h-64 object-cover rounded-lg" src="{{ post.post_picture.url }}"
+                                 alt="Post Picture">
+
+                        {% endif %}
                     </div>
+                <p class="text-gray-800 mt-4 mb-4 leading-relaxed"><b>{{ post.title | safe }}</b></p>
                     <p class="text-gray-800 mt-4 mb-4 leading-relaxed">{{ post.body | safe }}</p>
 
                 </div>

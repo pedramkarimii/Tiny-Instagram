@@ -139,3 +139,17 @@ CKEDITOR_CONFIGS = {
         'width': 500,
     },
 }
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = 'pedram.9060@gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_PASSWORD = 'kzkq zrty ryjz stii'
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+DEFAULT_FROM_EMAIL = 'Tiny Instagram'
+# DEFAULT_TO_EMAIL = 'pedram.9060@gmail.com'
+# DEFAULT_SUBJECT = 'Send password'
+# DEFAULT_MESSAGE = 'Your password '
+# DEFAULT_REPLY_TO = 'pedram.9060@gmail.com'
+# DEFAULT_REPLY_TO_NAME = 'pedram.9060@gmail.com'

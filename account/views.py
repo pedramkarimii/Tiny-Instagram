@@ -3,7 +3,7 @@ import pytz
 from django.contrib import messages
 from django.contrib.auth import logout, update_session_auth_hash
 from django.contrib.auth import login
-from .forms import UserLoginForm
+from .forms import UserLoginForm, UserPasswordResetForm
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy, reverse
@@ -13,9 +13,10 @@ from core.mixin import HttpsOptionMixin as CustomView
 from .forms import UserRegistrationForm, VerifyCodeForm, ProfileChangeOrCreationForm, CustomUserChangeForm, \
     ChangePasswordForm
 import random
-from core.utils import send_otp_code
+from account.utils import send_otp_code
 from .models import OptCode, User, Profile
-from django.contrib.auth.views import LoginView
+from django.contrib.auth.views import LoginView, PasswordResetView, PasswordResetDoneView, PasswordResetConfirmView, \
+    PasswordResetCompleteView
 
 
 #
@@ -212,11 +213,15 @@ class UserChangeView(CustomView):
     success_url = reverse_lazy('home')
     http_method_names = ['get', 'post']
 
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        self.user_instance = self.request.user  # noqa
+
     def get(self, request, *args, **kwargs):
         """
         Handle GET requests to display the user change form.
         """
-        user = request.user
+        user = self.user_instance
         form = self.form_class(instance=user)
         return render(request, self.template_name, {'form': form})
 
@@ -224,7 +229,7 @@ class UserChangeView(CustomView):
         """
         Handle POST requests to process form submission for changing user information.
         """
-        user = request.user
+        user = self.user_instance
         form = self.form_class(request.POST, instance=user)
         if form.is_valid():
             form.save()
@@ -281,6 +286,30 @@ class ChangePasswordView(CustomView):
             messages.success(request, 'Your password was successfully updated!')
             return redirect(reverse('home'))
         return render(request, self.template_name, {'form': form})
+
+
+class UserPasswordResetView(PasswordResetView):
+    template_name = 'accounts/email/password_reset.html'
+    success_url = reverse_lazy('resat_done')
+    form_class = UserPasswordResetForm
+    http_method_names = ['get', 'post']
+    email_template_name = 'accounts/email/password_reset_email.html'
+
+
+class UserPasswordResetDoneView(PasswordResetDoneView):
+    template_name = 'accounts/email/password_resat_done.html'
+    http_method_names = ['get']
+
+
+class UserPasswordResetConfirmView(PasswordResetConfirmView):
+    template_name = 'accounts/email/password_reset_confirm.html'
+    success_url = reverse_lazy('resat_complete')
+    http_method_names = ['get', 'post']
+
+
+class UserPasswordResetCompleteView(PasswordResetCompleteView):
+    template_name = 'accounts/email/password_reset_complete.html'
+    http_method_names = ['get']
 
 
 class CreateProfileView(CustomView):

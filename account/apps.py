@@ -6,7 +6,7 @@ class AccountConfig(AppConfig):
     name = 'account'
 
     def ready(self):
-        from core import signals
+        from account import signals
         """
         Executes code when the application is ready.
         This method is called as soon as Django starts.

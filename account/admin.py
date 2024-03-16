@@ -25,7 +25,7 @@ class ProfileAdmin(admin.ModelAdmin):
     Defines admin options for the Profile model.
     """
     model = Profile
-    list_display = ('user', 'full_name', 'gender')
+    list_display = ('user', 'full_name', 'gender', 'followers', 'following')
     list_filter = ('user',)
     search_fields = ('user',)
     ordering = ('-update_time',)

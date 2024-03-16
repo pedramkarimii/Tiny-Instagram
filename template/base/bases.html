@@ -1,25 +1,28 @@
 <html lang="en">
-    {% include "base/header.html" %}
-    {% block title %}
+{% include "base/header.html" %}
+{% block title %}
     <title>home</title>
-    {% endblock %}
-    <body class=" bg-gradient-to-r from-gray-800 via-gary-200 to-gary-800">
-        {% include 'base/navbar.html' %}
-        {% include 'base/messages.html' %}
-        {% block change_pass %} {% endblock  %}
-        {% block info_account %} {% endblock  %}
-        {% block Error400 %} {% endblock  %}
-        {% block login %} {% endblock  %}
-        {% block delete_account %} {% endblock  %}
-        {% block delete_user %} {% endblock  %}
-        {% block creat_profile %} {% endblock  %}
-        {% block register %} {% endblock  %}
-        {% block update_post %} {% endblock  %}
-        {% include "post/create_post.html" %}
-        {% block post %} {% endblock  %}
-        {% block explorer %} {% endblock  %}
+{% endblock %}
+<body class=" bg-gradient-to-r from-gray-800 via-gary-200 to-gary-800">
+{% include 'base/navbar.html' %}
+{% include 'base/messages.html' %}
+{% block change_pass %} {% endblock %}
+{% block resat_password_email %} {% endblock %}
+{% block resat_password_email_done %} {% endblock %}
+{% block resat_password_email_complete %} {% endblock %}
+{% block confirm_password %} {% endblock %}
+{% block info_account %} {% endblock %}
+{% block Error400 %} {% endblock %}
+{% block login %} {% endblock %}
+{% block delete_account %} {% endblock %}
+{% block delete_user %} {% endblock %}
+{% block creat_profile %} {% endblock %}
+{% block register %} {% endblock %}
+{% block update_post %} {% endblock %}
+{% block post %} {% endblock %}
+{% block create_posts %} {% endblock %}
+{% block explorer %} {% endblock %}
 
-
-     <footer>{% include "base/footer.html" %}</footer>
-    </body>
+<footer>{% include "base/footer.html" %}</footer>
+</body>
 </html>

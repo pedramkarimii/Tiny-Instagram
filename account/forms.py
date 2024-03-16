@@ -1,7 +1,7 @@
 from ckeditor.fields import RichTextField
 from django.core.exceptions import ValidationError
-from django.contrib.auth.forms import ReadOnlyPasswordHashField, PasswordChangeForm, UserCreationForm
-from account.models import User, OptCode, Profile
+from django.contrib.auth.forms import ReadOnlyPasswordHashField, PasswordChangeForm, UserCreationForm, PasswordResetForm
+from account.models import User, Profile, OptCode
 from django import forms
 
 
@@ -39,12 +39,6 @@ class CleanDataUserForm(UserCreationForm):
     class Meta:
         model = User
         fields = ['username', 'email', 'password1', 'password2']
-        widgets = {
-            'username': forms.TextInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'password1': forms.PasswordInput(attrs={'class': 'form-control'}),
-            'password2': forms.PasswordInput(attrs={'class': 'form-control'}),
-        }
         labels = {
             'username': 'Username',
             'email': 'Email',
@@ -349,6 +343,32 @@ class ChangePasswordForm(PasswordChangeForm):
     class Meta:
         model = User
         fields = ('old_password', 'new_password1', 'new_password2')
+
+
+class UserPasswordResetForm(PasswordResetForm):
+    """
+    This class defines a form for resetting user password, extending the PasswordResetForm.
+
+    Methods:
+        __init__: Constructor method to customize form field widgets.
+
+    """
+
+    def __init__(self, *args, **kwargs):
+        """
+        Constructor method to customize form field widgets.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+        """
+        super().__init__(*args, **kwargs)
+        for password in ['email']:
+            self.fields[password].widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        model = User
+        fields = ('email',)
 
 
 class CustomUserChangeForm(forms.ModelForm):

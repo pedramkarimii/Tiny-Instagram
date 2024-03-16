@@ -10,7 +10,12 @@ from .views import (
     ProfileDetailView,
     DeleteProfileView,
     DeleteUserView,
-    LoginVerifyCodeView, SuccessLoginView,
+    LoginVerifyCodeView,
+    SuccessLoginView,
+    UserPasswordResetView,
+    UserPasswordResetDoneView,
+    UserPasswordResetConfirmView,
+    UserPasswordResetCompleteView,
 )
 
 """ 
@@ -31,6 +36,10 @@ urlpatterns = [
     path('changeuser/', UserChangeView.as_view(), name='change_user'),
     path("changepass/", ChangePasswordView.as_view(), name="change_pass"),
     path("createprofile/", CreateProfileView.as_view(), name="create_profile"),
+    path("resatpassword/", UserPasswordResetView.as_view(), name="resat_password"),
+    path("resatpassword/done/", UserPasswordResetDoneView.as_view(), name="resat_done"),
+    path("confirm/<uidb64>/<token>/", UserPasswordResetConfirmView.as_view(), name="resat_password_confirm"),
+    path("confirm/resatcomplete/", UserPasswordResetCompleteView.as_view(), name="resat_complete"),
     path('profile/<int:pk>/delete/', DeleteProfileView.as_view(), name='delete_profile'),
     path('users/<int:pk>/delete/', DeleteUserView.as_view(), name='delete_user'),
     path("profiles/<int:pk>/", ProfileDetailView.as_view(), name="profile_detail"),

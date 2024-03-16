@@ -5,50 +5,34 @@ from django.urls import reverse
 from ckeditor.fields import RichTextField
 
 """
-Explanation:
-- User model:
-  - Represents users in the system.
-  - It has a one-to-one relationship with the Profile model via the user_id foreign key.
-  - Attributes:
-    - id (PK): Primary Key uniquely identifying each user.
-    - username: Username of the user.
-    - email: Email address of the user.
-    - phone_number: Phone number of the user.
-
-- Profile model:
-  - Stores additional information associated with a user.
-  - It has a one-to-one relationship with the User model via the user_id foreign key.
-  - Attributes:
-    - user_id (FK): Foreign Key referencing the corresponding User instance.
-    - full_name: Full name of the user.
-    - name: First name of the user.
-    - last_name: Last name of the user.
-    - bio: Biography or additional information about the user.
-    - image: Image associated with the user's profile.
-    - create_time: Timestamp indicating the creation time of the profile.
-    - update_time: Timestamp indicating the last update time of the profile.
-
-- OptCode model:
-  - Represents OTP codes associated with phone numbers.
-  - No direct relationship with the User or Profile model.
-  - Attributes:
-    - id (PK): Primary Key uniquely identifying each OTP code.
-    - code: The OTP code.
-    - phone_number: Phone number associated with the OTP code.
-    - created: Timestamp indicating the creation time of the OTP code.
-
-      +-------------------+        +-------------------+          +-------------------+
-      |        User       |        |      Profile      |          |      OptCode      |
-      +-------------------+        +-------------------+          +-------------------+
-      | id (PK)           |1      1| user_id (FK)      |1       1 | id (PK)           |
-      | username          |<------>| full_name         |<-------->| code              |
-      | email             |        | name              |          | phone_number      |
-      | phone_number      |        | last_name         |          | created           |
-      |                   |        | bio               |          |                   |
-      |                   |        | profile_picture   |          |                   |
-      |                   |        | create_time       |          |                   |
-      |                   |        | update_time       |          |                   |
-      +-------------------+        +-------------------+          +-------------------+
+          +-------------------+            1           +-------------------+
+          |       User        |------------------------|      Profile      |
+          +-------------------+          1             +-------------------+
+          | id                |<-----------------------| id                |
+          | username          |                        | user_id     FK    |
+          | email             |                        | followers_id      |
+          | phone_number      |                        | following_id      |
+          | create_time       |                        | create_time_follow|
+          | update_time       |                        | full_name         |
+          | is_deleted        |                        | name              |
+          | is_active         |                        | last_name         |
+          | is_admin          |                        | gender            |
+          | is_staff          |                        | age               |
+          | is_superuser      |                        | bio               |
+          +-------------------+                        | profile_picture   |
+                                                       | is_deleted        |
+                                                       | is_active         |
+                                                       | create_time       |
+                                                       | update_time       |
+                                                       +-------------------+
+          +-------------------+
+          |      OptCode      |
+          +-------------------+
+          | id                |
+          | code              |
+          | phone_number      |
+          | created           |
+          +-------------------+
 
 """
 
@@ -104,37 +88,57 @@ class User(BaseModelUserMixin):
 
 class Profile(models.Model):
     """
-    Model representing additional information associated with a user.
+    A model representing additional information associated with a user.
 
-    user: One-to-one relationship with the User model.
-    If a User object is deleted, the associated Profile object will also be deleted.
-    'related_name' attribute allows accessing Profile objects from a User instance using 'user.profile'.
+    Fields:
+        user (OneToOneField): One-to-one relationship with the User model.
+            If a User object is deleted, the associated Profile object will also be deleted.
+            'related_name' attribute allows accessing Profile objects from a User instance using 'user.profile'.
+        followers (ForeignKey): Relationship representing users who follow this profile.
+        following (ForeignKey): Relationship representing users whom this profile follows.
+        create_time_follow (DateTimeField): Creation time of the follow relationship.
+            Automatically set to the current datetime when the object is first created.
+        full_name (CharField): User's full name.
+        name (CharField): User's first name.
+        last_name (CharField): User's last name.
+        gender (CharField): User's gender.
+        age (PositiveSmallIntegerField): User's age.
+        bio (RichTextField): User's biography.
+        profile_picture (ImageField): User's profile picture.
+        is_deleted (BooleanField): Flag indicating if the profile is deleted.
+        is_active (BooleanField): Flag indicating if the profile is active.
+        create_time (DateTimeField): Creation time of the profile.
+            Automatically set to the current datetime when the object is first created.
+        update_time (DateTimeField): Last update time of the profile.
+            Automatically updated to the current datetime whenever the object is saved.
 
-    full name: Field to store the user's full name
+    Managers:
+        objects (DeleteManagerMixin): Custom manager for handling profile queries.
+            Implements soft deletion functionality.
 
-    name: Field to store the user's first name
+    Meta:
+        ordering: Specifies default ordering for queryset results.
+        verbose_name: Human-readable name for a single object of the model.
+        verbose_name_plural: Human-readable name for the model in plural form.
+        constraints: Define constraints such as unique constraints.
+        indexes: Define indexes for faster database query performance.
 
-    last name: Field to store the user's last name
+    Methods:
+        __str__: Returns a string representation of the Profile object.
+        get_absolute_url: Returns the absolute URL of the profile instance.
+        capitalize (property): Returns the full name of the user with each word capitalized.
+        get_follower_following: Gets the followers or following of a user based on a provided primary key.
+        get_follower_following_count: Gets the count of followers and following
+         of a user based on a provided primary key.
+    """
 
-    age: Field to store the user's age
-
-    address: Field to store the user's address
-
-    profile_picture:  Field to store the user's profile picture.
-
-    create time: Field to store the creation time of the profile.
-    'auto_now_add=True' automatically sets the field to the current datetime when the object is first created.
-    'editable=False' prevents this field from being edited.
-
-   update time: Field to store the last update time of the profile.
-   'auto_now=True' automatically updates the field to the current datetime whenever the object is saved.
-   'editable=False' prevents this field from being edited.
-
-   objects: Custom manager for handling profile queries.
-   manager (DeleteManagerMixin): Custom manager mixin for soft deletion functionality.
-
-   """
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_query_name='user_profile')
+    followers = models.ForeignKey(User, related_name='user_following', on_delete=models.CASCADE, null=True,
+                                  blank=True)
+    following = models.ForeignKey(User, related_name='user_followers', on_delete=models.CASCADE, null=True,
+                                  blank=True)
+    is_follow = models.BooleanField(default=False)
+    create_time_follow = models.DateTimeField(auto_now_add=True, editable=False)
     full_name = models.CharField(max_length=100)
     name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
@@ -173,10 +177,46 @@ class Profile(models.Model):
         """Property method that returns the full name of the user with each word capitalized."""
         return self.full_name.title()
 
+    def get_follower_following(self, pk):
+        """Method to get the followers of a user."""
+        followers = self.followers.objects.get(pk=pk)
+        following = self.following.objects.get(pk=pk)
+        if followers and followers.is_active and not followers.exists():
+            return followers
+        elif following and following.is_active and not following.exists():
+            return following
+        else:
+            return None
+
+    def get_follower_following_count(self, pk):
+        """Method to get the number of followers and following of a user."""
+        followers = self.followers.objects.filter(pk=pk).count()
+        following = self.following.objects.filter(pk=pk).count()
+        return followers, following
+
 
 class OptCode(models.Model):
     """
-    Model for otp codes.
+    Model to store OTP (One Time Password) codes.
+
+    Fields:
+        code (PositiveSmallIntegerField): The OTP code.
+        phone_number (CharField): The phone number associated with the OTP.
+            This field is unique to ensure each phone number has only one OTP.
+        created (DateTimeField): The datetime when the OTP was created.
+            Automatically set to the current datetime when the object is first created.
+
+    Meta:
+        ordering: Specifies default ordering for queryset results based on the creation time.
+        verbose_name: Human-readable name for a single object of the model.
+        verbose_name_plural: Human-readable name for the model in plural form.
+        unique_together: Ensures the combination of code and phone number is unique.
+        index_together: Specifies an index for faster lookup by code and phone number.
+        constraints: Define constraints such as unique constraints.
+        indexes: Define indexes for faster database query performance.
+
+    Methods:
+        __str__: Returns a string representation of the OTP object displaying code, phone number, and creation time.
     """
     code = models.PositiveSmallIntegerField()
     phone_number = models.CharField(max_length=11, unique=True)

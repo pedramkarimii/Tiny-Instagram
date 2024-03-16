@@ -6,19 +6,30 @@ LOGIN_EXEMPT_URLS = [
     '/login/',
     '/register/',
     '/verify/',
-    '/admin/login/?next=/admin/',
+
     '/login_verify_code/',
     '/login_verify/',
     '/success_login/',
+    '/resatpassword/',
+    '/resatpassword/done/',
+    '/admin/login/?next=/admin/',
+    '/confirm/<uidb64>/<token>/',
+    '/confirm/resatcomplete/',
+    '/',
 ]
 AFTER_LOGIN_REDIRECT_URL = [
     '/login/',
     '/register/',
     '/verify/',
-    '/admin/login/?next=/admin/',
     '/login_verify_code/',
     '/login_verify/',
     '/success_login/',
+    '/resatpassword/',
+    '/resatpassword/done/',
+    '/admin/login/?next=/admin/',
+    '/confirm/<uidb64>/<token>/',
+    '/confirm/resatcomplete/',
+
 ]
 
 
@@ -31,6 +42,12 @@ class LoginRequiredMiddleware:
             messages.warning(request, 'You should login first', extra_tags='warning')
             return HttpResponseRedirect(reverse('login'))
         elif request.user.is_authenticated and request.path_info in AFTER_LOGIN_REDIRECT_URL:
+            messages.warning(request, 'You should logout first', extra_tags='warning')
+            return HttpResponseRedirect(reverse('home'))
+        elif not any(request.path_info.startswith(url) for url in LOGIN_EXEMPT_URLS):
+            messages.warning(request, 'You should login first', extra_tags='warning')
+            return HttpResponseRedirect(reverse('login'))
+        elif not any(request.path_info.startswith(url) for url in AFTER_LOGIN_REDIRECT_URL):
             messages.warning(request, 'You should logout first', extra_tags='warning')
             return HttpResponseRedirect(reverse('home'))
         response = self.get_response(request)
