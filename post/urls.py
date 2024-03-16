@@ -4,7 +4,7 @@ from post.views import HomePostView, UpdatePostView, DeletePostView, Explorer, C
 
 urlpatterns = [
     path('createpost/', CreatePostView.as_view(), name='create_post'),
-    path('showposts/', HomePostView.as_view(), name='show_post'),
+    path('show_post/<int:pk>/', HomePostView.as_view(), name='show_post'),
     path("explorer/", Explorer.as_view(), name="explorer"),
 
     path('follow/<int:user_id>/', FollowUserView.as_view(), name='follow_user'),

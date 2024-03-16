@@ -86,8 +86,9 @@
                                       d="M21 10a1 1 0 00-1-1h-6.5a3.5 3.5 0 01-3.5-3.5V4a1 1 0 00-1-1H4a1 1 0 00-1 1v16a1 1 0 001 1h11.7l3.3 3.3a1 1 0 001.4 0l3.6-3.6a1 1 0 000-1.4l-3.3-3.3zm-5 4l-2 2m2-2l2-2m-2 2H7"></path>
                             </svg>
                             <span>Comment</span>
-                            <span class="text-sm pl-2">12</span>
+                            <span class="text-sm pl-2">{{ post.comment_set.all.count }}</span>
                         </button>
+
                     </div>
                     <div class="flex  items-center">
                         <!-- Like, Dislike, Comment Buttons -->
@@ -124,18 +125,40 @@
                 <hr>
                 <div class="comments-container">
                     {% for comment in post.comment_set.all %}
-                        <div class="comment-item border-t border-gray-200">
-                            <div class="comment-meta px-6 py-4 flex justify-between items-center">
-                                <p class="text-gray-800">
-                                    <span class="comment-owner">{{ comment.owner }}</span> |
-                                    <span class="comment-time">{{ comment.create_time | timesince }}</span>
-                                </p>
+                        {% if comment.is_reply == False %}
+
+
+                            <div class="comment-item border-t border-gray-200">
+                                <div class="comment-meta px-6 py-4 flex justify-between items-center">
+                                    <p class="text-gray-800">
+                                        <span class="comment-owner"> @{{ comment.owner }}</span></p>
+                                    <p class="text-gray-800">
+
+                                        <span class="comment-time">{{ comment.create_time | timesince }}</span>
+                                    </p>
+                                </div>
+                                <div class="comment-body px-6 py-4">
+                                    <p class="text-gray-800">{{ comment.comments | safe }}</p>
+                                </div>
                             </div>
-                            <div class="comment-body px-6 py-4">
-                                <p class="text-gray-800">{{ comment.body | safe }}</p>
-                            </div>
-                        </div>
+                        {% endif %}
+                    {% empty %}
+                        <p class="mt-4 ml-4 text-gray-800">No comment yet!</p>
+
                     {% endfor %}
+                <div class=" ml-4 mb-2 comment-item border-t border-gray-200">
+
+                <form method="post" action="{% url 'show_post'  post.id  %}">
+                            {% csrf_token %}
+                     <p  class="ml-4 px-6 ">{{ form.as_p }}</p>
+                    <a href="{% url 'show_post' post.id   %}">
+                    <button class="text-gray-600 font-semibold ml-16 mb-4 mt-4  mr-4 flex items-center">
+                            <span>Send Comment</span>
+                            <span class="text-sm pl-2"></span>
+                        </button></a>
+
+                                </form>
+                </div>
                 </div>
 
 

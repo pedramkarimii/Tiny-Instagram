@@ -56,7 +56,7 @@
                     <a
                             href="#"
                             class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-200 hover:rounded-md"
-                            onclick="redirectToPost()">Post</a
+                            onclick="redirectToPost({{ user.pk }})">Post</a
                     >
 {#                    <a#}
 {#                            href="#"#}
@@ -458,26 +458,11 @@
     function redirectToChangeProfile() {
         window.location.href = "{% url 'create_profile' %}";
     }
-    function redirectToPost() {
-        window.location.href = "{% url 'show_post' %}";
+    function redirectToPost(id) {
+        window.location.href = `show_post/${id}/`;
     }
-    {#function redirectToCreatePost() {#}
-    {#    window.location.href = "{% url 'show_post' %}";#}
-    {#}#}
-    {% comment %}
-    {#function redirectToCreatePost() {#}
-    {#    window.location.href = "{% url 'create_post' %}";#}
-    {#}#}
-    {#function redirectToDeletePost() {#}
-    {#    window.location.href = "{% url 'delete_post' %}";#}
-    {#}#}
-    {#function redirectToUpdatePost() {#}
-    {#    window.location.href = "{% url 'update_post' %}";#}
-    }
-    {% endcomment %}
 
     function redirectToInfo(id) {
-        console.log("Redirecting to profile with pk:", id);
         window.location.href = `/profiles/${id}/`;
     }
 

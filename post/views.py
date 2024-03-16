@@ -3,25 +3,44 @@ from django.db.models import Count
 from django.urls import reverse_lazy
 from account.models import User, Profile
 from core.mixin import HttpsOptionMixin as CustomView
-from post.forms import UpdatePostForm
+from post.forms import UpdatePostForm, CreatCommentForm
 from post.models import Post, Comment
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 
-
 class HomePostView(CustomView):
     template_name = 'post/posts.html'
-    http_method_names = ['get']
+    http_method_names = ['get', 'post']
+    form_class = CreatCommentForm
 
-    def get(self, request):
+    def get_success_url(self):
+        return reverse_lazy('show_post', kwargs={'pk': self.kwargs['pk']})
+
+    def get(self, request, pk):
         user = request.user
         posts = Post.objects.filter(owner=user.profile).order_by('-update_time', 'create_time')
-        return render(request, self.template_name, {'posts': posts})
+        return render(request, self.template_name, {'posts': posts, 'form': self.form_class()})
+
+    def post(self, request, pk):
+        form = self.form_class(request.POST)
+        if form.is_valid():
+            post_instance = get_object_or_404(Post, pk=pk, owner=request.user.profile)
+            comment = form.save(commit=False)
+            comment.owner = request.user.profile
+            comment.post = post_instance
+            comment.save()
+            messages.success(request, "You have created a new comment")
+            return redirect(self.get_success_url())  # Redirect to dynamically obtained success URL
+
+        # If form is not valid, render the form again with errors
+        posts = Post.objects.filter(owner=request.user.profile).order_by('-update_time', 'create_time')
+        return render(request, self.template_name, {'posts': posts, 'form': form})
 
 
 class Explorer(CustomView):
     template_name = 'explorer/explorer.html'
     http_method_names = ['get']
+    from_class = CreatCommentForm
 
     def get(self, request):
 
@@ -38,12 +57,34 @@ class Explorer(CustomView):
                         num_dislikes=Count('dislikes')
                     )
                 })
-        return render(request, self.template_name, {'user_posts': user_posts})
+        return render(request, self.template_name, {'user_posts': user_posts, 'form': self.from_class})
+
+
+# class CreatCommentView(CustomView):
+#     template_name = 'explorer/explorer.html'
+#     success_url = reverse_lazy('explorer')
+#     http_method_names = ['get', 'post']
+#     form_class = CreatCommentForm
+#
+#     def get(self, request, *args, **kwargs):
+#         # Handle GET requests here if needed
+#         return redirect(self.success_url)
+#
+#     def post(self, request, *args, **kwargs):
+#         user_id = kwargs.get('user_id')
+#         post_id = kwargs.get('post_id')
+#         comment_text = request.POST.get('comment')
+#         post = Post.objects.get(pk=post_id)
+#         user = User.objects.get(pk=user_id)
+#         comment = Comment.objects.create(owner=user.profile, post=post, comment=comment_text)
+#         comment.save()
+#         messages.success(request, f"You have commented on {post.title}")
+#         return redirect(self.success_url)
 
 
 class FollowUserView(CustomView):
     template_name = 'explorer/explorer.html'
-    success_url = reverse_lazy('show_post')
+    success_url = reverse_lazy('explorer')
     http_method_names = ['get', 'post']
 
     def get(self, request, *args, **kwargs):
@@ -67,7 +108,7 @@ class FollowUserView(CustomView):
 
 class UnfollowUserView(CustomView):
     template_name = 'explorer/explorer.html'
-    success_url = reverse_lazy('show_post')
+    success_url = reverse_lazy('explorer')
     http_method_names = ['get', 'post']
 
     def get(self, request, user_id):

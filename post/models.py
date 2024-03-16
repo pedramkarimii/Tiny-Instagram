@@ -69,7 +69,7 @@ class Comment(models.Model):
     reply = models.ForeignKey('self', on_delete=models.CASCADE, related_query_name='reply_comments', blank=True,
                               null=True)
     is_reply = models.BooleanField(default=False)
-    body = RichTextField()
+    comments = RichTextField()
     is_deleted = models.BooleanField(default=False)
     delete_time = models.DateTimeField(auto_now=True, editable=False)
     create_time = models.DateTimeField(auto_now_add=True, editable=False)
@@ -83,6 +83,6 @@ class Comment(models.Model):
         verbose_name = 'Comment'
         verbose_name_plural = 'Comments'
         get_latest_by = '-create_time'
-        constraints = [
-            models.UniqueConstraint(fields=['owner', 'post'], name='owner_post_unique')
-        ]
+        # constraints = [
+        #     models.UniqueConstraint(fields=['owner', 'post'], name='owner_post_unique')
+        # ]
