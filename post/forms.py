@@ -34,7 +34,7 @@ class CreatCommentForm(forms.ModelForm):
 
     class Meta:
         model = Comment
-        fields = ('comments',)
+        fields = ('comments','reply')
 
     def clean_body(self):
         body = self.cleaned_data.get('body')

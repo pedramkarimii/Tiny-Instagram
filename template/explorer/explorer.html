@@ -95,50 +95,53 @@
                     </div>
                     <hr>
                     <div class="comments-container">
-                         {% for comment in post.comment_set.all %}
-                        {% if comment.is_reply == False %}
+                        {% for comment in post.comment_set.all %}
+                            {% if comment.is_reply == False %}
 
 
-                            <div class="comment-item border-t border-gray-200">
-                                <div class="comment-meta px-6 py-4 flex justify-between items-center">
-                                    <p class="text-gray-800">
-                                        <span class="comment-owner"> @{{ comment.owner }}</span></p>
-                                    <p class="text-gray-800">
+                                <div class="comment-item border-t border-gray-200">
+                                    <div class="comment-meta px-6 py-4 flex justify-between items-center">
+                                        <p class="text-gray-800">
+                                            <span class="comment-owner"> @{{ comment.owner }}</span></p>
+                                        <p class="text-gray-800">
 
-                                        <span class="comment-time">{{ comment.create_time | timesince }}</span>
-                                    </p>
+                                            <span class="comment-time">{{ comment.create_time | timesince }}</span>
+                                        </p>
+                                    </div>
+                                    <div class="comment-body px-6 py-4">
+                                        <p class="text-gray-800">{{ comment.comments | safe }}</p>
+                                    </div>
                                 </div>
-                                <div class="comment-body px-6 py-4">
-                                    <p class="text-gray-800">{{ comment.comments | safe }}</p>
-                                </div>
-                            </div>
-                        {% endif %}
-                    {% empty %}
-                        <p class="mt-4 ml-4 text-gray-800">No comment yet!</p>
+                            {% endif %}
+                        {% empty %}
+                            <p class="mt-4 ml-4 text-gray-800">No comment yet!</p>
 
-                    {% endfor %}
-                <div class=" ml-4 mb-2 comment-item border-t border-gray-200">
+                        {% endfor %}
+                        <div class=" ml-4 mb-2 comment-item border-t border-gray-200">
 
-                <form method="post" action="{% url 'explorer'  post.id  %}">
-                            {% csrf_token %}
-                     <p  class="ml-4 px-6 ">{{ form.as_p }}</p>
-                    <a href="{% url 'explorer' post.id   %}">
-                    <button class="text-gray-600 font-semibold ml-16 mb-4 mt-4  mr-4 flex items-center">
-                            <span>Send Comment</span>
-                            <span class="text-sm pl-2"></span>
-                        </button></a>
+                            <form method="post" action="{% url 'explorer'  post.id %}">
+                                {% csrf_token %}
+                                <p class=" mt-4 mb-4">Create Comment{{ form.comments }}</p>
 
-                                </form>
+                                    <p class="mt-4">Reply{{ form.reply }}</p>
+                                <a href="{% url 'explorer' post.id %}">
+                                    <button class="text-gray-800 font-semibold ml-16 mb-4 mt-4  mr-4 flex items-center">
+                                        <span>Send Comment</span>
+                                        <span class="text-sm pl-2"></span>
+                                    </button>
+                                </a>
+
+                            </form>
+                        </div>
+                    </div>
+
+
                 </div>
-                </div>
 
 
-            </div>
-
-
-                    {% endfor %}
+            {% endfor %}
 
         {% endfor %}
     {% endif %}
-     </div>
+</div>
 {% endblock %}

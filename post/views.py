@@ -4,9 +4,10 @@ from django.urls import reverse_lazy
 from account.models import User, Profile
 from core.mixin import HttpsOptionMixin as CustomView
 from post.forms import UpdatePostForm, CreatCommentForm
-from post.models import Post, Comment
+from post.models import Post
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
+
 
 class HomePostView(CustomView):
     template_name = 'post/posts.html'
@@ -39,11 +40,15 @@ class HomePostView(CustomView):
 
 class Explorer(CustomView):
     template_name = 'explorer/explorer.html'
-    http_method_names = ['get']
-    from_class = CreatCommentForm
+    http_method_names = ['get', 'post']
+    form_class = CreatCommentForm
 
-    def get(self, request):
+    def get_success_url(self):
+        return reverse_lazy('explorer', kwargs={'pk': self.kwargs['pk']})
 
+    def get(self, request, pk):
+        user = request.user
+        posts = Post.objects.filter(owner=user.profile).order_by('-update_time', 'create_time')
         users_with_profiles = User.objects.filter(is_active=True).prefetch_related('profile').order_by('update_time',
                                                                                                        'creat_time')
         user_posts = []
@@ -57,7 +62,21 @@ class Explorer(CustomView):
                         num_dislikes=Count('dislikes')
                     )
                 })
-        return render(request, self.template_name, {'user_posts': user_posts, 'form': self.from_class})
+        return render(request, self.template_name,
+                      {'posts': posts, 'user_posts': user_posts, 'form': self.form_class()})
+
+    def post(self, request, pk):
+        form = self.form_class(request.POST)
+        if form.is_valid():
+            post_instance = get_object_or_404(Post, pk=pk)
+            comment = form.save(commit=False)
+            comment.owner = request.user.profile
+            comment.post = post_instance
+            comment.save()
+            messages.success(request, "You have created a new comment")
+            return redirect(self.get_success_url())
+
+        return render(request, self.template_name, {'form': form})
 
 
 # class CreatCommentView(CustomView):
