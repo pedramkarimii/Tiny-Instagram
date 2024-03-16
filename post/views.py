@@ -4,7 +4,7 @@ from django.urls import reverse_lazy
 from account.models import User, Profile
 from core.mixin import HttpsOptionMixin as CustomView
 from post.forms import UpdatePostForm
-from post.models import Post
+from post.models import Post, Comment
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 
@@ -15,7 +15,7 @@ class HomePostView(CustomView):
 
     def get(self, request):
         user = request.user
-        posts = Post.objects.filter(owner=user.profile)
+        posts = Post.objects.filter(owner=user.profile).order_by('-update_time', 'create_time')
         return render(request, self.template_name, {'posts': posts})
 
 

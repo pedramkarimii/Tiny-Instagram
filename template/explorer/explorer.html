@@ -4,8 +4,6 @@
 {% endblock %}
 {% block explorer %}
     {% if request.user.is_authenticated %}
-
-
         <div class="max-w-7xl  mx-auto grid grid-cols-2 gap-4">
         {% for user_post in user_posts %}
             {% for post in user_post.posts %}
@@ -23,7 +21,7 @@
                             </div>
                             <div>
                                 {% if request.user.profile.user_id != user_post.user.profile.user_id %}
-                                     {% if request.user.profile.user_id != user_post.user.profile.user_id %}
+                                    {% if request.user.profile.user_id != user_post.user.profile.user_id %}
                                         <form action="{% url 'unfollow_user' user_post.user.profile.user_id %}"
                                               method="post">
                                             {% csrf_token %}
@@ -31,12 +29,13 @@
                                         </form>
 
                                         {% if request.user.profile.user_id != user_post.user.profile.user_id and  user_post.user.profile.is_follow == False %}
-                                        <form action="{% url 'follow_user' user_post.user.profile.user_id %}"
-                                              method="post">
-                                            {% csrf_token %}
-                                            <button type="submit" class="text-blue-600 font-semibold">Follow</button>
-                                        </form>
-                                    {% endif %}
+                                            <form action="{% url 'follow_user' user_post.user.profile.user_id %}"
+                                                  method="post">
+                                                {% csrf_token %}
+                                                <button type="submit" class="text-blue-600 font-semibold">Follow
+                                                </button>
+                                            </form>
+                                        {% endif %}
                                     {% endif %}
                                 {% endif %}
                             </div>
@@ -94,7 +93,24 @@
                             <span class="text-sm pl-2">12</span>
                         </button>
                     </div>
+                    <hr>
+                    <div class="comments-container">
+                        {% for comment in post.comment_set.all %}
+                            <div class="comment-item border-t border-gray-200">
+                                <div class="comment-meta px-6 py-4 flex justify-between items-center">
+                                    <p class="text-gray-800">
+                                        <span class="comment-owner">{{ comment.owner }}</span> |
+                                        <span class="comment-time">{{ comment.create_time | timesince }}</span>
+                                    </p>
+                                </div>
+                                <div class="comment-body px-6 py-4">
+                                    <p class="text-gray-800">{{ comment.body | safe }}</p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
                 </div>
+
             {% endfor %}
         {% endfor %}
     {% endif %}
