@@ -1,8 +1,6 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count
 from django.urls import reverse_lazy
-from django.views.generic import DetailView
-
 from account.models import User, Profile
 from core.mixin import HttpsOptionMixin as CustomView
 from post.forms import UpdatePostForm, CreatCommentForm
@@ -33,9 +31,8 @@ class HomePostView(CustomView):
             comment.post = post_instance
             comment.save()
             messages.success(request, "You have created a new comment")
-            return redirect(self.get_success_url())  # Redirect to dynamically obtained success URL
+            return redirect(self.get_success_url())
 
-        # If form is not valid, render the form again with errors
         posts = Post.objects.filter(owner=request.user.profile).order_by('-update_time', 'create_time')
         return render(request, self.template_name, {'posts': posts, 'form': form})
 
@@ -81,13 +78,56 @@ class Explorer(CustomView):
         return render(request, self.template_name, {'form': form})
 
 
+class PostLikeView(CustomView):
+    template_name = 'explorer/explorer.html'
+    success_url = reverse_lazy('explorer')
+    http_method_names = ['get']
+
+    def get_success_url(self):
+        return reverse_lazy('explorer', kwargs={'pk': self.kwargs['post_id']})
+
+    def get(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id)
+
+        if post.likes == request.user.profile:
+            messages.error(request, "You already liked this post")
+        else:
+            post.likes = request.user.profile
+            post.save()
+            messages.success(request, "You have liked this post")
+            if post.dislikes == request.user.profile:
+                post.dislikes = None
+                post.save()
+                messages.success(request, "You have removed your dislike from this post")
+
+        return redirect(self.get_success_url())
+
+
+class PostDislikeView(CustomView):
+
+    def get(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id)
+
+        if post.dislikes == request.user.profile:
+            messages.error(request, "You already disliked this post")
+        else:
+            post.dislikes = request.user.profile
+            post.save()
+            messages.success(request, "You have disliked this post")
+            if post.likes == request.user.profile:
+                post.likes = None
+                post.save()
+                messages.success(request, "You have removed your like from this post")
+
+        return redirect(reverse_lazy('explorer', kwargs={'pk': post_id}))
+
+
 class FollowUserView(CustomView):
     template_name = 'explorer/explorer.html'
     success_url = reverse_lazy('explorer')
     http_method_names = ['get', 'post']
 
     def get(self, request, *args, **kwargs):
-        # Handle GET requests here if needed
         return redirect(self.success_url)
 
     def post(self, request, *args, **kwargs):
@@ -95,11 +135,9 @@ class FollowUserView(CustomView):
         profile = Profile.objects.get(pk=user_id)
         current_user_profile = request.user.profile
 
-        # Logic to follow the user
         current_user_profile.following = profile.user
         current_user_profile.save()
 
-        # Add a success message
         messages.success(request, f"You are now following {profile.full_name}")
 
         return redirect(self.success_url)
