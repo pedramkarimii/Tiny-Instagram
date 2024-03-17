@@ -19,12 +19,10 @@ from django.contrib.auth.views import LoginView, PasswordResetView, PasswordRese
     PasswordResetCompleteView
 
 
-#
 class SuccessLoginView(CustomView, LoginView):
     """
     Handles user login.
     """
-    # template_name = 'accounts/login.html'
     http_method_names = ['get', 'post']
     next_page = reverse_lazy('home')
 
@@ -319,6 +317,18 @@ class CreateProfileView(CustomView):
     template_name = 'accounts/create_profile.html'
     http_method_names = ['get', 'post']
     form_class = ProfileChangeOrCreationForm
+
+    def dispatch(self, request, *args, **kwargs):
+        """
+        Checks if the user is profile and redirects to the home page if not.
+        """
+        if request.user:
+            try:
+                profile = request.user.profile  # noqa
+                return redirect('home')
+            except Profile.DoesNotExist:
+                pass
+        return super().dispatch(request, *args, **kwargs)  # noqa
 
     def get(self, request):
         """
