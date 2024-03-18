@@ -1,4 +1,6 @@
 from datetime import datetime
+from django.core.mail import send_mail
+from django.conf import settings
 import pytz
 from django.contrib import messages
 from django.contrib.auth import logout, update_session_auth_hash
@@ -100,6 +102,29 @@ class UserLoginView(MustBeLogoutCustomView):
         return render(request, self.template_login, {'form': form})
 
 
+class UserLogoutView(MustBeLogingCustomView):
+    """
+    Handles user logout.
+    """
+    http_method_names = ['get', 'post']
+
+    def setup(self, request, *args, **kwargs):
+        """Initialize the success_url."""
+        self.next_page_home = reverse_lazy('home')  # noqa
+        return super().setup(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        """
+        Handle GET requests for logging out.
+        Logs out the user, clears session, and redirects to the home page with a success message.
+        """
+        if request.user.is_authenticated:
+            logout(self.request)
+            messages.success(request, 'Logout successfully', extra_tags='success')
+            request.session.flush()
+            return redirect(self.next_page_home)
+
+
 class LoginVerifyCodeView(MustBeLogoutCustomView):
     """
     View for verifying login code.
@@ -139,7 +164,7 @@ class LoginVerifyCodeView(MustBeLogoutCustomView):
         code_instance = OptCode.objects.get(phone_number=user_session['phone_number'])
         form = self.form(request.POST)
         if form.is_valid():  # noqa
-            cd = form.cleaned_data
+            cd = form.cleaned_data  # noqa
             death_time = code_instance.created + timezone.timedelta(minutes=2)
             if cd['code'] == code_instance.code and death_time > datetime.now(tz=pytz.timezone('Asia/Tehran')):
                 if code_instance:
@@ -154,93 +179,6 @@ class LoginVerifyCodeView(MustBeLogoutCustomView):
         else:
             messages.error(request, 'Code is not valid', extra_tags='error')
             return redirect(self.next_page_login_verify_code)
-
-
-class UserLoginEmailView(MustBeLogoutCustomView):
-    template_name = 'accounts/email/login_email.html'
-    http_method_names = ['get', 'post']
-    next_page = reverse_lazy('login_verify_code_email')
-    form_class = UserLoginEmailForm
-
-    def get(self, request):
-        form = self.form_class()
-        return render(request, self.template_name, {'form': form})
-
-    def post(self, request):
-        form = self.form_class(request.POST)
-        if form.is_valid():
-            request.session['user_login_info'] = {
-                'email': form.cleaned_data['email'],
-                'password': form.cleaned_data['password'],
-            }
-            random_code = random.randint(1000, 9999)
-            OptCode.objects.create(email=form.cleaned_data['email'], code=random_code)
-            messages.success(request, 'Code sent to your Email', extra_tags='success')
-            return redirect(self.next_page)
-        return render(request, self.template_name, {'form': form})
-
-
-class UserPasswordResetEmailView(PasswordResetView):
-    template_name = 'accounts/email/login_email.html'
-    success_url = reverse_lazy('resat_done')
-    form_class = UserPasswordResetForm
-    http_method_names = ['get', 'post']
-    email_template_name = 'accounts/email/otp_code_email.html'
-
-
-class LoginVerifyCodeEmailView(MustBeLogoutCustomView):
-    form_class = VerifyCodeForm
-    template_name = 'accounts/verifycode.html'
-    http_method_names = ['get', 'post']
-
-    def get(self, request):
-        form = self.form_class()
-        return render(request, self.template_name, {'form': form})
-
-    def post(self, request):
-        user_session = request.session['user_login_info']
-        code_instance = OptCode.objects.get(email=user_session['phone_number'])
-        form = self.form_class(request.POST)
-        if form.is_valid():
-            cd = form.cleaned_data
-            death_time = code_instance.created + timezone.timedelta(minutes=2)
-            if cd['code'] == code_instance.code and death_time > datetime.now(tz=pytz.timezone('Asia/Tehran')):
-                if code_instance:
-                    user = User.objects.get(email=code_instance.email)
-                    login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-                    code_instance.delete()
-                    messages.success(request, 'Code verified successfully', extra_tags='success')
-                    return redirect('success_login')
-                return redirect('home')
-            elif death_time < datetime.now(tz=pytz.timezone('Asia/Tehran')):
-                messages.error(request, 'Code is expired', extra_tags='error')
-                return redirect('login_verify_code')
-        else:
-            messages.error(request, 'Code is not valid', extra_tags='error')
-            return redirect('login_verify_code')
-
-
-class UserLogoutView(MustBeLogingCustomView):
-    """
-    Handles user logout.
-    """
-    http_method_names = ['get', 'post']
-
-    def setup(self, request, *args, **kwargs):
-        """Initialize the success_url."""
-        self.next_page_home = reverse_lazy('home')  # noqa
-        return super().setup(request, *args, **kwargs)
-
-    def get(self, request, *args, **kwargs):
-        """
-        Handle GET requests for logging out.
-        Logs out the user, clears session, and redirects to the home page with a success message.
-        """
-        if request.user.is_authenticated:
-            logout(self.request)
-            messages.success(request, 'Logout successfully', extra_tags='success')
-            request.session.flush()
-            return redirect(self.next_page_home)
 
 
 class UserRegisterView(MustBeLogoutCustomView):
@@ -276,7 +214,6 @@ class UserRegisterView(MustBeLogoutCustomView):
         if form.is_valid():
             random_code = random.randint(1000, 9999)
             send_otp_code(form.cleaned_data['phone_number'], random_code)
-
             OptCode.objects.create(phone_number=form.cleaned_data['phone_number'], code=random_code)
             request.session['user_registration_info'] = {
                 'phone_number': form.cleaned_data['phone_number'],
@@ -346,49 +283,6 @@ class UserRegistrationVerifyCodeView(MustBeLogoutCustomView):
             return redirect(self.next_page_login_verify_code)
 
 
-class UserChangeView(MustBeLogingCustomView):
-    """
-    View for changing user information.
-    """
-    http_method_names = ['get', 'post']
-
-    def setup(self, request, *args, **kwargs):
-        """
-        Initialize the form_class, next_page_home, next_page_change_user, user_instance, template name.
-        Set up method to retrieve the current user instance.
-        """
-        self.form_class = CustomUserChangeForm  # noqa
-        self.next_page_home = reverse_lazy('home')  # noqa
-        self.next_page_change_user = reverse_lazy('change_user')  # noqa
-        self.template_change_user = 'accounts/change_user.html'  # noqa
-        self.user_instance = request.user  # noqa
-        return super().setup(request, *args, **kwargs)
-
-    def get(self, request, *args, **kwargs):
-        """
-        Handle GET requests to display the user change form.
-        Renders the user change form with the current user's information.
-        """
-        form = self.form_class(instance=self.user_instance)
-        return render(request, self.template_change_user, {'form': form})
-
-    def post(self, request, *args, **kwargs):
-        """
-        Handle POST requests to process form submission for changing user information.
-        If form is valid, save changes and display success message.
-        If form is not valid, render form again with error messages.
-        """
-        form = self.form_class(request.POST, instance=self.user_instance)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'User information updated successfully', extra_tags='success')
-            return redirect(self.next_page_home)
-        elif not form.is_valid():
-            messages.error(request, 'Please Invalid form!!!', extra_tags='error')
-            return redirect(self.next_page_change_user)
-        return render(request, self.template_change_user, {'form': form})
-
-
 class ChangePasswordView(MustBeLogingCustomView):
     """A view to manage password change for users."""
     http_method_names = ['get', 'post']
@@ -420,6 +314,103 @@ class ChangePasswordView(MustBeLogingCustomView):
             messages.error(request, 'Please Invalid form!!!', extra_tags='error')
             return redirect(self.next_page_change_pass)
         return render(request, self.template_change_password, {'form': form})
+
+
+class UserLoginEmailView(MustBeLogoutCustomView):
+    http_method_names = ['get', 'post']
+
+    def setup(self, request, *args, **kwargs):
+        """
+        Initialize the form_class, next_page_login_verify_code_email, template_login_email.
+        """
+        self.form_class = UserLoginEmailForm  # noqa
+        self.next_page_login_verify_code_email = reverse_lazy('login_verify_code_email')  # noqa
+        self.next_page_login_email = reverse_lazy('login_email')  # noqa
+        self.template_login_email = 'accounts/email/login_email.html'  # noqa
+        return super().setup(request, *args, **kwargs)
+
+    def send_otp_email(self, email, otp):
+
+        user = User.objects.filter(email=email).exists()
+        if user:
+            subject = 'Your OTP for Verification'
+            message = f'Your OTP for login is (Expiry date two minutes): {otp}'
+            from_email = settings.EMAIL_HOST_USER
+            recipient_list = [email]
+            send_mail(subject, message, from_email, recipient_list)
+            OptCode.objects.create(email=email, code=otp)
+            messages.success(self.request, 'Code sent to your Email', extra_tags='success')
+        elif not user:
+            messages.success(self.request, 'Code sent to your Email', extra_tags='success')
+            return redirect(self.next_page_login_verify_code_email)
+        else:
+            messages.success(self.request, 'Code sent to your Email', extra_tags='success')
+            return redirect(self.next_page_login_verify_code_email)
+
+    def get(self, request):
+        return render(request, self.template_login_email, {'form': self.form_class()})
+
+    def post(self, request):
+        form = self.form_class(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            random_code = random.randint(1000, 9999)
+            self.send_otp_email(email, random_code)
+            request.session['user_login_info'] = {
+                'email': form.cleaned_data['email'],
+                'password': form.cleaned_data['password'],
+            }
+            return redirect(self.next_page_login_verify_code_email)
+        elif not form.is_valid():
+            messages.error(request, 'Please Invalid form!!!', extra_tags='error')
+            return redirect(self.next_page_login_email)
+        return render(request, self.template_login_email, {'form': form})
+
+
+class LoginVerifyCodeEmailView(MustBeLogoutCustomView):
+    http_method_names = ['get', 'post']
+
+    def setup(self, request, *args, **kwargs):
+        """
+        Initialize the form_class, next_page_login_verify_code_email, template_login_email.
+        """
+        self.form_class = VerifyCodeForm  # noqa
+        self.next_page_login_email = reverse_lazy('login_email')  # noqa
+        self.next_page_success_login = reverse_lazy('success_login')  # noqa
+        self.next_page_login_verify_code = reverse_lazy('login_verify_code_email')  # noqa
+        self.template_verifycode = 'accounts/verifycode.html'  # noqa
+        return super().setup(request, *args, **kwargs)
+
+    def get(self, request):
+        return render(request, self.template_verifycode, {'form': self.form_class()})
+
+    def post(self, request):
+        user_session = request.session.get('user_login_info')
+        try:
+            code_instance = OptCode.objects.get(email=user_session['email'])
+        except OptCode.DoesNotExist:
+            messages.error(request, 'Code is not valid', extra_tags='error')
+            return redirect(self.next_page_login_email)
+        form = self.form_class(request.POST)
+        if form.is_valid():  # noqa
+            cd = form.cleaned_data  # noqa
+            death_time = code_instance.created + timezone.timedelta(minutes=2)
+            if cd['code'] == code_instance.code and death_time > datetime.now(tz=pytz.timezone('Asia/Tehran')):
+                if code_instance:
+                    user = User.objects.get(email=code_instance.email)
+                    login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+                    code_instance.delete()
+                    messages.success(request, 'Code verified successfully', extra_tags='success')
+                    return redirect(self.next_page_success_login)
+            elif death_time < datetime.now(tz=pytz.timezone('Asia/Tehran')):
+                messages.error(request, 'Code is expired', extra_tags='error')
+                return redirect(self.next_page_login_email)
+        else:
+            messages.error(request, 'Code is not aAA valid', extra_tags='error')
+            return redirect(self.next_page_login_verify_code)
+        # else:
+        #     messages.error(request, 'Code is not valid', extra_tags='error')
+        #     return redirect(self.next_page_login_verify_code)
 
 
 class UserPasswordResetView(PasswordResetView, MustBeLogoutCustomView):
@@ -478,6 +469,49 @@ class UserPasswordResetCompleteView(PasswordResetCompleteView, MustBeLogoutCusto
     http_method_names = ['get']
 
 
+class UserChangeView(MustBeLogingCustomView):
+    """
+    View for changing user information.
+    """
+    http_method_names = ['get', 'post']
+
+    def setup(self, request, *args, **kwargs):
+        """
+        Initialize the form_class, next_page_home, next_page_change_user, user_instance, template name.
+        Set up method to retrieve the current user instance.
+        """
+        self.form_class = CustomUserChangeForm  # noqa
+        self.next_page_home = reverse_lazy('home')  # noqa
+        self.next_page_change_user = reverse_lazy('change_user')  # noqa
+        self.template_change_user = 'accounts/change_user.html'  # noqa
+        self.user_instance = request.user  # noqa
+        return super().setup(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        """
+        Handle GET requests to display the user change form.
+        Renders the user change form with the current user's information.
+        """
+        form = self.form_class(instance=self.user_instance)
+        return render(request, self.template_change_user, {'form': form})
+
+    def post(self, request, *args, **kwargs):
+        """
+        Handle POST requests to process form submission for changing user information.
+        If form is valid, save changes and display success message.
+        If form is not valid, render form again with error messages.
+        """
+        form = self.form_class(request.POST, instance=self.user_instance)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'User information updated successfully', extra_tags='success')
+            return redirect(self.next_page_home)
+        elif not form.is_valid():
+            messages.error(request, 'Please Invalid form!!!', extra_tags='error')
+            return redirect(self.next_page_change_user)
+        return render(request, self.template_change_user, {'form': form})
+
+
 class CreateProfileView(MustBeLogingCustomView):
     """
     Handles the creation of user profiles.
@@ -504,60 +538,6 @@ class CreateProfileView(MustBeLogingCustomView):
     def post(self, request):
         """
         Handles form submission for creating a user profile.
-        """
-        try:
-            profile = request.user.profile
-        except Profile.DoesNotExist:
-            profile = None
-
-        form = self.form_class(request.POST, request.FILES, instance=profile)
-        if form.is_valid():
-            profile = form.save(commit=False)
-            profile.user = request.user
-            profile_picture = request.FILES.get('profile_picture')
-            if profile_picture:
-                profile.profile_picture = profile_picture
-            profile.save()
-            messages.success(
-                request,
-                'Your profile has been created successfully',
-                extra_tags='success')
-            return redirect(self.next_page1)
-        else:
-            messages.error(
-                request,
-                'Your profile has not been created successfully',
-                extra_tags='error')
-            return redirect(self.next_page2)
-
-
-class EditeProfileView(MustBeLogingCustomView):
-    """
-    Handles user profile creation.
-    """
-
-    http_method_names = ['get', 'post']
-
-    def setup(self, request, *args, **kwargs):
-        """
-        Initialize the form, next page1, page2, template name.
-        """
-        self.form_class = ProfileChangeOrCreationForm  # noqa
-        self.next_page1 = reverse_lazy('home')  # noqa
-        self.next_page2 = reverse_lazy('create_profile')  # noqa
-        self.template_edite_profile = 'accounts/edite_profile.html'  # noqa
-        return super().setup(request, *args, **kwargs)
-
-    def get(self, request):
-        """
-        Renders the form for creating a user profile.
-        """
-        form = self.form_class(instance=request.user)
-        return render(request, self.template_edite_profile, {'form': form})
-
-    def post(self, request):
-        """
-        Processes the form submission for creating a user profile.
         """
         try:
             profile = request.user.profile
