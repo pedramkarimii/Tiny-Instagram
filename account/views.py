@@ -8,7 +8,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.generic import DetailView, DeleteView
-from core.mixin import HttpsOptionMixin as CustomView
+from core.mixin import HttpsOptionLoginMixin as MustBeLogoutCustomView, \
+    HttpsOptionNotLogoutMixin as MustBeLogingCustomView
 from .forms import UserRegistrationForm, VerifyCodeForm, ProfileChangeOrCreationForm, CustomUserChangeForm, \
     ChangePasswordForm
 import random
@@ -18,7 +19,7 @@ from django.contrib.auth.views import LoginView, PasswordResetView, PasswordRese
     PasswordResetCompleteView
 
 
-class SuccessLoginView(CustomView, LoginView):
+class SuccessLoginView(MustBeLogoutCustomView, LoginView):
     """
     Handles user login.
     Inherits from CustomView and LoginView classes.
@@ -27,8 +28,8 @@ class SuccessLoginView(CustomView, LoginView):
     next_page = reverse_lazy('home')
 
     def setup(self, request, *args, **kwargs):
-        """Initialize the next page2, get profile."""
-        self.next_page2 = reverse_lazy('create_profile')  # noqa
+        """Initialize the next_page_create_profile, get profile."""
+        self.next_page_create_profile = reverse_lazy('create_profile')  # noqa
         self.get_profile = hasattr(request.user, 'profile')  # noqa
         return super().setup(request, *args, **kwargs)
 
@@ -45,24 +46,11 @@ class SuccessLoginView(CustomView, LoginView):
             messages.warning(self.request,
                              'Please complete your profile.',
                              extra_tags='warning')
-            return redirect(self.next_page2)
+            return redirect(self.next_page_create_profile)
         return response
 
-    def dispatch(self, request, *args, **kwargs):
-        """
-        Dispatch method to handle user authentication status.
-        If the user is authenticated, redirect to the home page.
-        Otherwise, proceed with the default dispatch behavior.
-        """
-        if request.user.is_authenticated:
 
-            return redirect('home')
-
-        else:
-            return super().dispatch(request, *args, **kwargs)
-
-
-class UserLoginView(CustomView):
+class UserLoginView(MustBeLogoutCustomView):
     """
     View for user login.
     Renders login form and handles form submission for user login.
@@ -70,11 +58,12 @@ class UserLoginView(CustomView):
     http_method_names = ['get', 'post']
 
     def setup(self, request, *args, **kwargs):
-        """Initialize the form, next page1, page2, template name."""
+        """Initialize the form, next_page_login_verify_code, next_page_login, next_page_home,
+         template_name, template name."""
         self.form = UserLoginForm  # noqa
-        self.next_page1 = reverse_lazy('login_verify_code')  # noqa
-        self.next_page2 = reverse_lazy('login')  # noqa
-        self.template_name = 'accounts/login.html'  # noqa
+        self.next_page_login_verify_code = reverse_lazy('login_verify_code')  # noqa
+        self.next_page_login = reverse_lazy('login')  # noqa
+        self.template_login = 'accounts/login.html'  # noqa
         return super().setup(request, *args, **kwargs)
 
     def get(self, request):
@@ -82,7 +71,7 @@ class UserLoginView(CustomView):
          Handle GET requests to display the login form.
          Renders the login form with an instance of the UserLoginForm.
          """
-        return render(request, self.template_name, {'form': self.form()})
+        return render(request, self.template_login, {'form': self.form()})
 
     def post(self, request):
         """
@@ -104,14 +93,14 @@ class UserLoginView(CustomView):
                 send_otp_code(phone_number, random_code)
                 OptCode.objects.create(phone_number=phone_number, code=random_code)
                 messages.success(request, 'Code sent to your phone number', extra_tags='success')
-                return redirect(self.next_page1)
+                return redirect(self.next_page_login_verify_code)
             else:
                 messages.error(request, 'Phone number or password is not valid', extra_tags='error')
-                return redirect(self.next_page2)
-        return render(request, self.template_name, {'form': form})
+                return redirect(self.next_page_login)
+        return render(request, self.template_login, {'form': form})
 
 
-class LoginVerifyCodeView(CustomView):
+class LoginVerifyCodeView(MustBeLogoutCustomView):
     """
     View for verifying login code.
 
@@ -120,12 +109,14 @@ class LoginVerifyCodeView(CustomView):
     http_method_names = ['get', 'post']
 
     def setup(self, request, *args, **kwargs):
-        """Initialize the form, next page1, page2, page3, template name."""
+        """Initialize the form, next_page_login_verify_code, next_page_success_login,
+        next_page_login, next_page_home, template name."""
         self.form = VerifyCodeForm  # noqa
-        self.next_page1 = reverse_lazy('login_verify_code')  # noqa
-        self.next_page2 = reverse_lazy('success_login')  # noqa
-        self.next_page3 = reverse_lazy('login')  # noqa
-        self.template_name = 'accounts/verifycode.html'  # noqa
+        self.next_page_login_verify_code = reverse_lazy('login_verify_code')  # noqa
+        self.next_page_success_login = reverse_lazy('success_login')  # noqa
+        self.next_page_login = reverse_lazy('login')  # noqa
+        self.next_page_home = reverse_lazy('home')  # noqa
+        self.template_verifycode = 'accounts/verifycode.html'  # noqa
         return super().setup(request, *args, **kwargs)
 
     def get(self, request):
@@ -134,7 +125,7 @@ class LoginVerifyCodeView(CustomView):
 
         Renders the code verification form.
         """
-        return render(request, self.template_name, {'form': self.form()})
+        return render(request, self.template_verifycode, {'form': self.form()})
 
     def post(self, request):
         """
@@ -156,16 +147,16 @@ class LoginVerifyCodeView(CustomView):
                     login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                     code_instance.delete()
                     messages.success(request, 'Code verified successfully', extra_tags='success')
-                    return redirect(self.next_page2)
+                    return redirect(self.next_page_success_login)
             elif death_time < datetime.now(tz=pytz.timezone('Asia/Tehran')):
                 messages.error(request, 'Code is expired', extra_tags='error')
-                return redirect(self.next_page3)
+                return redirect(self.next_page_login)
         else:
             messages.error(request, 'Code is not valid', extra_tags='error')
-            return redirect(self.next_page1)
+            return redirect(self.next_page_login_verify_code)
 
 
-class UserLoginEmailView(CustomView):
+class UserLoginEmailView(MustBeLogoutCustomView):
     template_name = 'accounts/email/login_email.html'
     http_method_names = ['get', 'post']
     next_page = reverse_lazy('login_verify_code_email')
@@ -197,7 +188,7 @@ class UserPasswordResetEmailView(PasswordResetView):
     email_template_name = 'accounts/email/otp_code_email.html'
 
 
-class LoginVerifyCodeEmailView(CustomView):
+class LoginVerifyCodeEmailView(MustBeLogoutCustomView):
     form_class = VerifyCodeForm
     template_name = 'accounts/verifycode.html'
     http_method_names = ['get', 'post']
@@ -229,7 +220,7 @@ class LoginVerifyCodeEmailView(CustomView):
             return redirect('login_verify_code')
 
 
-class UserLogoutView(CustomView):
+class UserLogoutView(MustBeLogingCustomView):
     """
     Handles user logout.
     """
@@ -237,23 +228,8 @@ class UserLogoutView(CustomView):
 
     def setup(self, request, *args, **kwargs):
         """Initialize the success_url."""
-        self.success_url = reverse_lazy('home')  # noqa
+        self.next_page_home = reverse_lazy('home')  # noqa
         return super().setup(request, *args, **kwargs)
-
-    def dispatch(self, request, *args, **kwargs):
-        """
-        Dispatch method to handle user authentication status.
-        Redirects non-authenticated users to the home page with an error message.
-        """
-        if not request.user.is_authenticated:
-            messages.error(
-                request,
-                'You are not logged in.',
-                extra_tags='error',
-            )
-            return redirect(self.success_url)
-        else:
-            return super().dispatch(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
         """
@@ -264,21 +240,23 @@ class UserLogoutView(CustomView):
             logout(self.request)
             messages.success(request, 'Logout successfully', extra_tags='success')
             request.session.flush()
-            return redirect(self.success_url)
+            return redirect(self.next_page_home)
 
 
-class UserRegisterView(CustomView):
+class UserRegisterView(MustBeLogoutCustomView):
     """
     Handles user registration.
     """
     http_method_names = ['get', 'post']
 
     def setup(self, request, *args, **kwargs):
-        """Initialize the form, next page1, page2, template name."""
+        """Initialize the form_class, next_page_verify_code, next_page_register_user,
+        next_page_home, template name."""
         self.form_class = UserRegistrationForm  # noqa
-        self.next_page1 = reverse_lazy('verify_code')  # noqa
-        self.next_page2 = reverse_lazy('register_user')  # noqa
-        self.template_name = 'accounts/create_user.html'  # noqa
+        self.next_page_verify_code = reverse_lazy('verify_code')  # noqa
+        self.next_page_register_user = reverse_lazy('register_user')  # noqa
+        self.next_page_home = reverse_lazy('home')  # noqa
+        self.template_create_user = 'accounts/create_user.html'  # noqa
         return super().setup(request, *args, **kwargs)
 
     def get(self, request):
@@ -286,7 +264,7 @@ class UserRegisterView(CustomView):
        Handle GET requests to display the user registration form.
        Renders the user registration form.
        """
-        return render(request, self.template_name, {'form': self.form_class()})
+        return render(request, self.template_create_user, {'form': self.form_class()})
 
     def post(self, request):
         """
@@ -307,25 +285,25 @@ class UserRegisterView(CustomView):
                 'password': form.cleaned_data['password2'],
             }
             messages.success(request, 'Code sent to your phone number', extra_tags='success')
-            return redirect(self.next_page1)
+            return redirect(self.next_page_verify_code)
         elif not form.is_valid():
             messages.error(request, 'Please Invalid form!!!', extra_tags='error')
-            return redirect(self.next_page2)
-        return render(request, self.template_name, {'form': form})
+            return redirect(self.next_page_register_user)
+        return render(request, self.template_create_user, {'form': form})
 
 
-class UserRegistrationVerifyCodeView(CustomView):
+class UserRegistrationVerifyCodeView(MustBeLogoutCustomView):
     """
     Handles verification of registration code for user registration.
     """
     http_method_names = ['get', 'post']
 
     def setup(self, request, *args, **kwargs):
-        """Initialize the form, next page1, page2, context, template name."""
+        """Initialize the form_class, next_page_home, next_page_login_verify_code, template name."""
         self.form_class = VerifyCodeForm  # noqa
-        self.next_page1 = reverse_lazy('home')  # noqa
-        self.next_page2 = reverse_lazy('login_verify_code')  # noqa
-        self.template_name = 'accounts/verifycode.html'  # noqa
+        self.next_page_home = reverse_lazy('home')  # noqa
+        self.next_page_login_verify_code = reverse_lazy('login_verify_code')  # noqa
+        self.template_verifycode = 'accounts/verifycode.html'  # noqa
         return super().setup(request, *args, **kwargs)
 
     def get(self, request):
@@ -333,7 +311,7 @@ class UserRegistrationVerifyCodeView(CustomView):
         Handle GET requests to display the code verification form for user registration.
         Renders the code verification form.
         """
-        return render(request, self.template_name, {'form': self.form_class()})
+        return render(request, self.template_verifycode, {'form': self.form_class()})
 
     def post(self, request):
         """
@@ -359,16 +337,16 @@ class UserRegistrationVerifyCodeView(CustomView):
 
                 code_instance.delete()
                 messages.success(request, 'User created successfully', extra_tags='success')
-                return redirect(self.next_page1)
+                return redirect(self.next_page_home)
             elif death_time < datetime.now(tz=pytz.timezone('Asia/Tehran')):
                 messages.error(request, 'Code is expired', extra_tags='error')
-                return redirect(self.next_page2)
+                return redirect(self.next_page_login_verify_code)
         else:
             messages.error(request, 'Code is not valid', extra_tags='error')
-            return redirect(self.next_page2)
+            return redirect(self.next_page_login_verify_code)
 
 
-class UserChangeView(CustomView):
+class UserChangeView(MustBeLogingCustomView):
     """
     View for changing user information.
     """
@@ -376,13 +354,13 @@ class UserChangeView(CustomView):
 
     def setup(self, request, *args, **kwargs):
         """
-        Initialize the form, next page1, page2, context, template name.
+        Initialize the form_class, next_page_home, next_page_change_user, user_instance, template name.
         Set up method to retrieve the current user instance.
         """
         self.form_class = CustomUserChangeForm  # noqa
-        self.next_page1 = reverse_lazy('home')  # noqa
-        self.next_page2 = reverse_lazy('change_user')  # noqa
-        self.template_name = 'accounts/change_user.html'  # noqa
+        self.next_page_home = reverse_lazy('home')  # noqa
+        self.next_page_change_user = reverse_lazy('change_user')  # noqa
+        self.template_change_user = 'accounts/change_user.html'  # noqa
         self.user_instance = request.user  # noqa
         return super().setup(request, *args, **kwargs)
 
@@ -392,7 +370,7 @@ class UserChangeView(CustomView):
         Renders the user change form with the current user's information.
         """
         form = self.form_class(instance=self.user_instance)
-        return render(request, self.template_name, {'form': form})
+        return render(request, self.template_change_user, {'form': form})
 
     def post(self, request, *args, **kwargs):
         """
@@ -404,31 +382,31 @@ class UserChangeView(CustomView):
         if form.is_valid():
             form.save()
             messages.success(request, 'User information updated successfully', extra_tags='success')
-            return redirect(self.next_page1)
+            return redirect(self.next_page_home)
         elif not form.is_valid():
             messages.error(request, 'Please Invalid form!!!', extra_tags='error')
-            return redirect(self.next_page2)
-        return render(request, self.template_name, {'form': form})
+            return redirect(self.next_page_change_user)
+        return render(request, self.template_change_user, {'form': form})
 
 
-class ChangePasswordView(CustomView):
+class ChangePasswordView(MustBeLogingCustomView):
     """A view to manage password change for users."""
     http_method_names = ['get', 'post']
 
     def setup(self, request, *args, **kwargs):
         """
-        Initialize the form, next page1, page2, template name.
+        Initialize the form_class, next page1, page2, template name.
         """
         self.form_class = ChangePasswordForm  # noqa
-        self.next_page1 = reverse_lazy('home')  # noqa
-        self.next_page2 = reverse_lazy('change_pass')  # noqa
-        self.template_name = 'accounts/change_password.html'  # noqa
+        self.next_page_home = reverse_lazy('home')  # noqa
+        self.next_page_change_pass = reverse_lazy('change_pass')  # noqa
+        self.template_change_password = 'accounts/change_password.html'  # noqa
         return super().setup(request, *args, **kwargs)
 
     def get(self, request):
         """Render the change password form."""
         form = self.form_class(request.user)
-        return render(request, self.template_name, {'form': form})
+        return render(request, self.template_change_password, {'form': form})
 
     def post(self, request):
         """Handle password change form submission."""
@@ -437,14 +415,14 @@ class ChangePasswordView(CustomView):
             user = form.save()
             update_session_auth_hash(request, user)
             messages.success(request, 'Your password was successfully updated!')
-            return redirect(self.next_page1)
+            return redirect(self.next_page_home)
         elif not form.is_valid():
             messages.error(request, 'Please Invalid form!!!', extra_tags='error')
-            return redirect(self.next_page2)
-        return render(request, self.template_name, {'form': form})
+            return redirect(self.next_page_change_pass)
+        return render(request, self.template_change_password, {'form': form})
 
 
-class UserPasswordResetView(PasswordResetView):
+class UserPasswordResetView(PasswordResetView, MustBeLogoutCustomView):
     """
    View for handling user password reset.
    Inherits from Django's built-in PasswordResetView.
@@ -462,7 +440,7 @@ class UserPasswordResetView(PasswordResetView):
     email_template_name = 'accounts/email/password_reset_email.html'
 
 
-class UserPasswordResetDoneView(PasswordResetDoneView):
+class UserPasswordResetDoneView(PasswordResetDoneView, MustBeLogoutCustomView):
     """
     View for displaying password reset done confirmation.
     Inherits from Django's built-in PasswordResetDoneView.
@@ -474,7 +452,7 @@ class UserPasswordResetDoneView(PasswordResetDoneView):
     http_method_names = ['get']
 
 
-class UserPasswordResetConfirmView(PasswordResetConfirmView):
+class UserPasswordResetConfirmView(PasswordResetConfirmView, MustBeLogoutCustomView):
     """
     View for handling user password reset confirmation.
     Inherits from Django's built-in PasswordResetConfirmView.
@@ -488,7 +466,7 @@ class UserPasswordResetConfirmView(PasswordResetConfirmView):
     http_method_names = ['get', 'post']
 
 
-class UserPasswordResetCompleteView(PasswordResetCompleteView):
+class UserPasswordResetCompleteView(PasswordResetCompleteView, MustBeLogoutCustomView):
     """
     View for displaying password reset completion.
     Inherits from Django's built-in PasswordResetCompleteView.
@@ -500,7 +478,7 @@ class UserPasswordResetCompleteView(PasswordResetCompleteView):
     http_method_names = ['get']
 
 
-class CreateProfileView(CustomView):
+class CreateProfileView(MustBeLogingCustomView):
     """
     Handles the creation of user profiles.
     """
@@ -513,27 +491,15 @@ class CreateProfileView(CustomView):
         self.form_class = ProfileChangeOrCreationForm  # noqa
         self.next_page1 = reverse_lazy('home')  # noqa
         self.next_page2 = reverse_lazy('create_profile')  # noqa
-        self.template_name = 'accounts/create_profile.html'  # noqa
+        self.template_create_profile = 'accounts/create_profile.html'  # noqa
         return super().setup(request, *args, **kwargs)
-
-    def dispatch(self, request, *args, **kwargs):
-        """
-        Handles the creation of user profiles.
-        """
-        if request.user:
-            try:
-                profile = request.user.profile  # noqa
-                return redirect(self.next_page1)
-            except Profile.DoesNotExist:
-                pass
-        return super().dispatch(request, *args, **kwargs)  # noqa
 
     def get(self, request):
         """
         Renders the form for creating a user profile.
         """
         form = self.form_class(instance=request.user)
-        return render(request, self.template_name, {'form': form})
+        return render(request, self.template_create_profile, {'form': form})
 
     def post(self, request):
         """
@@ -565,7 +531,7 @@ class CreateProfileView(CustomView):
             return redirect(self.next_page2)
 
 
-class EditeProfileView(CustomView):
+class EditeProfileView(MustBeLogingCustomView):
     """
     Handles user profile creation.
     """
@@ -579,7 +545,7 @@ class EditeProfileView(CustomView):
         self.form_class = ProfileChangeOrCreationForm  # noqa
         self.next_page1 = reverse_lazy('home')  # noqa
         self.next_page2 = reverse_lazy('create_profile')  # noqa
-        self.template_name = 'accounts/edite_profile.html'  # noqa
+        self.template_edite_profile = 'accounts/edite_profile.html'  # noqa
         return super().setup(request, *args, **kwargs)
 
     def get(self, request):
@@ -587,7 +553,7 @@ class EditeProfileView(CustomView):
         Renders the form for creating a user profile.
         """
         form = self.form_class(instance=request.user)
-        return render(request, self.template_name, {'form': form})
+        return render(request, self.template_edite_profile, {'form': form})
 
     def post(self, request):
         """
@@ -619,7 +585,7 @@ class EditeProfileView(CustomView):
             return redirect(self.next_page2)
 
 
-class ProfileDetailView(DetailView):
+class ProfileDetailView(DetailView, MustBeLogingCustomView):
     """
     Displays user profile details.
     """
@@ -643,7 +609,7 @@ class ProfileDetailView(DetailView):
         return get_object_or_404(User, pk=self.kwargs['pk']) and profile_get_object
 
 
-class DeleteProfileView(DeleteView):
+class DeleteProfileView(DeleteView, MustBeLogingCustomView):
     """
     View for deleting a user's profile.
     """
@@ -670,7 +636,7 @@ class DeleteProfileView(DeleteView):
         return redirect(success_url)
 
 
-class DeleteUserView(DeleteView):
+class DeleteUserView(DeleteView, MustBeLogingCustomView):
     """
     View for soft deleting a user.
     """
