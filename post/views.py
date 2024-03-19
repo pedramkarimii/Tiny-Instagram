@@ -1,128 +1,167 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count
 from django.urls import reverse_lazy
 from account.models import User, Profile
-from core.mixin import HttpsOptionNotLogoutMixin as CustomLogoutView
+from core.mixin import HttpsOptionNotLogoutMixin as MustBeLogingCustomView
 from post.forms import UpdatePostForm, CreatCommentForm
 from post.models import Post
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 
 
-class HomePostView(CustomLogoutView):
-    template_name = 'post/posts.html'
+class HomePostView(MustBeLogingCustomView):
+    """
+    The HomePostView class handles both GET and POST requests for displaying and creating comments on posts.
+    - The setup method initializes view attributes including the template name,form class,next page URL,user,and posts.
+    - The get method renders the template to display posts along with the comment creation form.
+    - The post method processes form submissions for creating comments on posts.
+      - If the form is valid, it saves the comment and displays a success message.
+      - If the form is invalid, it renders the template again with the form and any validation errors.
+    """
     http_method_names = ['get', 'post']
-    form_class = CreatCommentForm
 
-    def get_success_url(self):
-        return reverse_lazy('show_post', kwargs={'pk': self.kwargs['pk']})
+    def setup(self, request, *args, **kwargs):
+        """Initialize the template_posts, form_class, next_page_show_post, user, posts."""
+        self.template_posts = 'post/posts.html'  # noqa
+        self.form_class = CreatCommentForm  # noqa
+        self.next_page_show_post = reverse_lazy('show_post', kwargs={'pk': kwargs['pk']})  # noqa
+        self.user = request.user  # noqa
+        self.posts = Post.objects.filter(owner=self.user.profile, is_deleted=False).annotate(  # noqa
+            num_likes=Count('likes'),
+            num_dislikes=Count('dislikes')
+        )
+        return super().setup(request, *args, **kwargs)
 
-    def get(self, request, pk):
-        user = request.user
-        posts = Post.objects.filter(owner=user.profile).order_by('-update_time', 'create_time')
-        return render(request, self.template_name, {'posts': posts, 'form': self.form_class()})
+    def get(self, request, *args, **kwargs):
+        """Handle GET requests.
+        Render the template to display posts."""
+        return render(request, self.template_posts, {'posts': self.posts, 'form': self.form_class()})
 
-    def post(self, request, pk):
+    def post(self, request, *args, **kwargs):
+        """Handle POST requests.
+        Process form submission for creating a comment."""
         form = self.form_class(request.POST)
         if form.is_valid():
-            post_instance = get_object_or_404(Post, pk=pk, owner=request.user.profile)
+            post_instance = get_object_or_404(Post, pk=kwargs['pk'], owner=self.user.profile)
             comment = form.save(commit=False)
             comment.owner = request.user.profile
             comment.post = post_instance
             comment.save()
             messages.success(request, "You have created a new comment")
-            return redirect(self.get_success_url())
-
-        posts = Post.objects.filter(owner=request.user.profile).order_by('-update_time', 'create_time')
-        return render(request, self.template_name, {'posts': posts, 'form': form})
+            return redirect(self.next_page_show_post)
+        return render(request, self.template_posts, {'posts': self.posts, 'form': form})
 
 
-class Explorer(CustomLogoutView):
-    template_name = 'explorer/explorer.html'
+class Explorer(MustBeLogingCustomView):
+    """
+    The Explorer class handles both GET and POST requests for exploring posts and adding comments.
+    - The setup method initializes view attributes including the template name,form class,next page URL,user,and posts.
+    - Get method retrieves posts from all active users, along with their profiles,and renders them on the explorer page.
+    - The post method processes form submissions for adding comments to posts.
+      - If the form is valid, it saves the comment and displays a success message.
+      - If the form is invalid, it renders the explorer page again with the form and any validation errors.
+    """
     http_method_names = ['get', 'post']
-    form_class = CreatCommentForm
 
-    def get_success_url(self):
-        return reverse_lazy('explorer', kwargs={'pk': self.kwargs['pk']})
+    def setup(self, request, *args, **kwargs):
+        """Initialize the template_explorer, form_class, next_page_show_post, user, posts."""
+        self.template_explorer = 'explorer/explorer.html'  # noqa
+        self.form_class = CreatCommentForm  # noqa
+        self.next_page_explorer = reverse_lazy('explorer', kwargs={'pk': kwargs['pk']})  # noqa
+        self.next_page_home = reverse_lazy('home')  # noqa
+        # self.next_page_create_profile = reverse_lazy('create_profile')  # noqa
+        self.user = request.user  # noqa
+        try:
+            self.user_profile = self.user.profile
+        except ObjectDoesNotExist:
+            self.user_profile = None  # noqa
+            messages.error(request, "You must have a profile. Please create a profile")
+        self.posts = Post.objects.filter(owner=self.user_profile)  # noqa
+        return super().setup(request, *args, **kwargs)
 
-    def get(self, request, pk):
-        user = request.user
-        posts = Post.objects.filter(owner=user.profile).order_by('-update_time', 'create_time')
-        users_with_profiles = User.objects.filter(is_active=True).prefetch_related('profile').order_by('update_time',
-                                                                                                       'creat_time')
+    def get(self, request, *args, **kwargs):
+        users_with_profiles = User.objects.filter(is_active=True).prefetch_related('profile')
         user_posts = []
-        for user in users_with_profiles:
-            if hasattr(user, 'profile'):
+        for self.user in users_with_profiles:
+            if hasattr(self.user, 'profile'):
                 user_posts.append({
-                    'user': user,
-                    'posts': Post.objects.filter(owner=user.profile, is_deleted=False).order_by('-update_time',
-                                                                                                'create_time').annotate(
+                    'user': self.user,
+                    'posts': Post.objects.filter(owner=self.user.profile, is_deleted=False).annotate(
                         num_likes=Count('likes'),
                         num_dislikes=Count('dislikes')
                     )
                 })
-        return render(request, self.template_name,
-                      {'posts': posts, 'user_posts': user_posts, 'form': self.form_class()})
+        return render(request, self.template_explorer,
+                      {'posts': self.posts, 'user_posts': user_posts, 'form': self.form_class()})
 
-    def post(self, request, pk):
+    def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST)
         if form.is_valid():
-            post_instance = get_object_or_404(Post, pk=pk)
+            post_instance = get_object_or_404(Post, pk=kwargs['pk'])
             comment = form.save(commit=False)
-            comment.owner = request.user.profile
+            comment.owner = self.user.profile
             comment.post = post_instance
             comment.save()
             messages.success(request, "You have created a new comment")
-            return redirect(self.get_success_url())
+            return redirect(self.next_page_explorer)
 
-        return render(request, self.template_name, {'form': form})
+        return render(request, self.template_explorer, {'form': form})
 
 
-class PostLikeView(CustomLogoutView):
-    template_name = 'explorer/explorer.html'
-    success_url = reverse_lazy('explorer')
-    http_method_names = ['get']
+class CreatePostView(MustBeLogingCustomView):
+    """
+    The CreatePostView class handles both GET and POST requests for creating a post.
+    - The setup method initializes the view attributes including the form class, template name, next page URL, files,
+        and user.
+    - The get method renders the form for creating a post.
+    - The post method processes the form submission for creating a post.
+      - If the form is valid, it creates a new post instance, assigns the owner, saves the post, displays a success
+            message, and redirects to the page for creating a new post.
+      - If the form is invalid, it displays an error message and renders the form again with the error messages.
+    """
+    http_method_names = ['get', 'post']
 
-    def get_success_url(self):
-        return reverse_lazy('explorer', kwargs={'pk': self.kwargs['post_id']})
+    def setup(self, request, *args, **kwargs):
+        """Initialize the form_class, template_create_post, next_page_home, files, user."""
+        self.form_class = UpdatePostForm  # noqa
+        self.template_create_post = 'post/create_post.html'  # noqa
+        self.next_page_create_post = reverse_lazy('create_post')  # noqa
+        self.files = request.FILES  # noqa
+        self.user = request.user  # noqa
+        try:
+            self.user_profile = Profile.objects.get(user=self.user)
+        except ObjectDoesNotExist:
+            messages.error(request, "You must have a profile. Please create a profile")
+            self.user_profile = None  # noqa
+        return super().setup(request, *args, **kwargs)
 
-    def get(self, request, post_id):
-        post = get_object_or_404(Post, id=post_id)
+    def get(self, request):
+        """Render the form for creating a post."""
+        return render(request, self.template_create_post, {'form': self.form_class()})
 
-        if post.likes == request.user.profile:
-            messages.error(request, "You already liked this post")
-        else:
-            post.likes = request.user.profile
-            post.save()
-            messages.success(request, "You have liked this post")
-            if post.dislikes == request.user.profile:
-                post.dislikes = None
+    def post(self, request):
+        """Process the form submission for creating a post."""
+        form = self.form_class(request.POST, self.files)
+        if form.is_valid():
+            post = form.save(commit=False)
+            post.owner = Profile.objects.get(user=self.user)
+            if 'post_picture' in self.files:
+                post.post_picture = self.files['post_picture']
                 post.save()
-                messages.success(request, "You have removed your dislike from this post")
-
-        return redirect(self.get_success_url())
-
-
-class PostDislikeView(CustomLogoutView):
-
-    def get(self, request, post_id):
-        post = get_object_or_404(Post, id=post_id)
-
-        if post.dislikes == request.user.profile:
-            messages.error(request, "You already disliked this post")
-        else:
-            post.dislikes = request.user.profile
-            post.save()
-            messages.success(request, "You have disliked this post")
-            if post.likes == request.user.profile:
-                post.likes = None
+                messages.success(request, 'Post created successfully!')
+                return redirect(self.next_page_create_post)
+            else:
                 post.save()
-                messages.success(request, "You have removed your like from this post")
+                messages.success(request, 'Post created successfully!')
+                return render(request, self.template_create_post, {'form': form})
+        elif not form.is_valid():
+            messages.error(request, 'Failed to create post')
+            return redirect(self.template_create_post)
+        else:
+            return render(request, self.template_create_post, {'form': form})
 
-        return redirect(reverse_lazy('explorer', kwargs={'pk': post_id}))
 
-
-class FollowUserView(CustomLogoutView):
+class FollowUserView(MustBeLogingCustomView):
     template_name = 'explorer/explorer.html'
     success_url = reverse_lazy('explorer')
     http_method_names = ['get', 'post']
@@ -143,7 +182,7 @@ class FollowUserView(CustomLogoutView):
         return redirect(self.success_url)
 
 
-class UnfollowUserView(CustomLogoutView):
+class UnfollowUserView(MustBeLogingCustomView):
     template_name = 'explorer/explorer.html'
     success_url = reverse_lazy('explorer')
     http_method_names = ['get', 'post']
@@ -170,101 +209,134 @@ class UnfollowUserView(CustomLogoutView):
             return redirect(self.success_url, user.id)
 
 
-class CreatePostView(CustomLogoutView):
-    template_name = 'post/create_post.html'
-    success_url = reverse_lazy('home')
-    form_class = UpdatePostForm
-    http_method_names = ['get', 'post']
+class PostLikeView(MustBeLogingCustomView):
+    """
+    The PostLikeView class handles GET requests for liking/disliking a post.
+    - The setup method initializes the view attributes including the next page URL, user, and post instance.
+    - The get method processes liking/disliking of a post.
+      - If the post is not already liked by the user, it sets the like for the user and removes any existing dislike.
+      - If the post is not already disliked by the user, it sets the dislike for the user and removes any existing like.
+      - Redirects the user to the next page after processing the request.
+    """
+    http_method_names = ['get']
 
-    def get(self, request):
-        form = self.form_class()  # Assuming you have a PostForm defined
-        return render(request, self.template_name, {'form': form})
+    def setup(self, request, *args, **kwargs):
+        """Initialize the next_page_explorer_post_id, user, self.post."""
+        self.next_page_explorer_post_id = reverse_lazy('explorer', kwargs={'pk': kwargs['post_id']})  # noqa
+        self.user = request.user.profile  # noqa
+        self.post = get_object_or_404(Post, pk=kwargs['post_id'])  # noqa
+        return super().setup(request, *args, **kwargs)
 
-    def post(self, request):
-        form = self.form_class(request.POST, request.FILES)
-        if form.is_valid():
-            post = form.save(commit=False)
-            post.owner = Profile.objects.get(user=request.user)
-            if 'post_picture' in request.FILES:
-                post.post_picture = request.FILES['post_picture']
-                post.save()
-                messages.success(request, 'Post created successfully!')
-                return redirect(self.success_url)
-            else:
-                post.save()
-                messages.success(request, 'Post created successfully!')
-                return render(request, self.template_name, {'form': form}) and redirect(self.success_url)
+    def get(self, request, *args, **kwargs):
+        """Handle GET requests.
+        Process liking/disliking of a post."""
 
-        else:
-            return render(request, self.template_name, {'form': form})
+        if not self.post.likes == self.user:
+            """ If the post is not already liked by the user, like the post."""
+            self.post.likes = self.user
+            self.post.save()
+            messages.success(request, "You have liked this post")
+            if self.post.dislikes == self.user:
+                """If the post was previously disliked by the user, remove the dislike."""
+                self.post.dislikes = None
+                self.post.save()
+                messages.success(request, "You have removed your dislike from this post")
+            return redirect(self.next_page_explorer_post_id)
+
+        if not self.post.dislikes == self.user:
+            """If the post is not already disliked by the user, dislike the post."""
+            self.post.dislikes = self.user  # noqa
+            self.post.save()
+            messages.success(request, "You have disliked this post")
+            if self.post.likes == self.user:
+                """If the post was previously liked by the user, remove the like."""
+                self.post.likes = None
+                self.post.save()
+                messages.success(request, "You have removed your like from this post")
+        return redirect(self.next_page_explorer_post_id)
 
 
-class UpdatePostView(CustomLogoutView):
+class UpdatePostView(MustBeLogingCustomView):
     """
     View for updating a post.
+    The UpdatePostView class handles both GET and POST requests for updating a post.
+    - The setup method initializes the view attributes including the template name, form class, files, user,
+        next page URL, and retrieves the post instance.
+    - The get method renders the form for updating a post with the existing post data filled in.
+    - The post method processes the form submission for updating a post.
+    - If the form is valid, it updates the post with the new data, saves it, and redirects to the page displaying
+        the updated post.
+    - If the form is invalid, it displays an error message and renders the form again with the error messages.
     """
-    template_name = 'post/update_post.html'
-    success_url = reverse_lazy('show_post')
-    form_class = UpdatePostForm
     http_method_names = ['get', 'post']
 
     def setup(self, request, *args, **kwargs):
-        super().setup(request, *args, **kwargs)
-        self.post_instance = get_object_or_404(Post, pk=self.kwargs['pk'])  # noqa
+        self.template_update_post = 'post/update_post.html'  # noqa
+        self.form_class = UpdatePostForm  # noqa
+        self.files = request.FILES  # noqa
+        self.user = request.user  # noqa
+        self.next_page_show_post = reverse_lazy('show_post', kwargs={'pk': kwargs['pk']})  # noqa
+        self.post_instance = get_object_or_404(Post, pk=kwargs['pk'])  # noqa
+        return super().setup(request, *args, **kwargs)
 
-    def get(self, request, pk):  # noqa
+    def get(self, request, *args, **kwargs):  # noqa
         """
         Renders the form for updating a post.
         """
-        post = self.post_instance
-        form = self.form_class(instance=post)
-        return render(request, self.template_name, {'form': form, 'post': post})
+        form = self.form_class(instance=self.post_instance)
+        return render(request, self.template_update_post, {'form': form, 'post': self.post_instance})
 
-    def post(self, request, pk):  # noqa
+    def post(self, request, *args, **kwargs):  # noqa
         """
         Processes the form submission for updating a post.
         """
-        post = self.post_instance
-        form = self.form_class(request.POST, request.FILES, instance=post)
+        form = self.form_class(request.POST, self.files, instance=self.post_instance)
         if form.is_valid():
             posts = form.save(commit=False)
-            posts.owner = Profile.objects.get(user=request.user)
-            if 'post_picture' in request.FILES:
-                posts.post_picture = request.FILES['post_picture']
+            posts.owner = Profile.objects.get(user=self.user)
+            if 'post_picture' in self.files:
+                posts.post_picture = self.files['post_picture']
                 posts.save()
                 messages.success(request, 'Post updated successfully')
-                return redirect(self.success_url)
+                return redirect(self.next_page_show_post)
             else:
                 messages.error(request, 'Failed to update post')
-                return render(request, self.template_name, {'form': form}) and redirect(self.success_url)
+                return render(request, self.template_update_post, {'form': form}) and redirect(
+                    self.template_update_post)
         else:
             messages.error(request, 'Failed to update post')
-            return render(request, self.template_name, {'form': form})
+            return render(request, self.template_update_post, {'form': form})
 
 
-class DeletePostView(CustomLogoutView):
+class DeletePostView(MustBeLogingCustomView):
     """
     View for deleting a post.
+
+    The DeletePostView class handles both GET and POST requests for deleting a post.
+    - The setup method initializes the view attributes including the template name, next page URL, and retrieves
+         the post instance.
+    - The get method renders the delete confirmation page.
+    - The post method deletes the post instance, displays a success message, and redirects the user to the page
+        displaying the posts.
     """
-    template_name = 'post/delete_post.html'
     http_method_names = ['get', 'post']
-    success_url = reverse_lazy('show_post')
 
     def setup(self, request, *args, **kwargs):
-        super().setup(request, *args, **kwargs)
-        self.post_instance = get_object_or_404(Post, pk=self.kwargs['pk'])  # noqa
+        self.template_delete_post = 'post/delete_post.html'  # noqa
+        self.next_page_show_post = reverse_lazy('show_post', kwargs={'pk': kwargs['pk']})  # noqa
+        self.post_instance = get_object_or_404(Post, pk=kwargs['pk'])  # noqa
+        return super().setup(request, *args, **kwargs)
 
-    def get(self, request, pk):  # noqa
-        post = self.post_instance
-        return render(request, self.template_name, {'post': post})
+    def get(self, request, *args, **kwargs):
+        """Handle GET request to display delete confirmation page."""
+        return render(request, self.template_delete_post, {'post': self.post_instance})
 
-    def post(self, request, pk):  # noqa
-        post = self.post_instance
-        if post:
-            Post.objects.filter(pk=post.pk).delete()
-
+    def post(self, request, *args, **kwargs):
+        """Handle POST request to delete the post."""
+        if self.post_instance:
+            Post.objects.filter(pk=self.post_instance.pk).delete()
             messages.success(request, 'Post deleted successfully!')
-            return redirect(self.success_url)
+            return redirect(self.next_page_show_post)
         else:
             messages.error(request, 'Post not found!')
-            return redirect(self.success_url)
+            return redirect(self.next_page_show_post)

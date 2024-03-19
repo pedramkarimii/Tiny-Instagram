@@ -11,13 +11,15 @@
 
                     {{ form.as_p | safe }}
                 <div>
+                    <a href="{% url 'update_post' post.id %}">
                     <button
                             type="submit"
                             class="bg-gray-100  text-gray-800 text-center hover:bg-blue-800  font-semibold px-4 py-2 rounded focus:outline-none focus:shadow-outline">
                         <b> Update</b>
                     </button>
+                    </a>
 
-                    <a class="bg-gray-100 px-4 py-2 text-center text-gray-800  hover:bg-red-800  font-semibold  rounded focus:outline-none focus:shadow-outline" href="{% url 'show_post' %}">
+                    <a class="bg-gray-100 px-4 py-2 text-center text-gray-800  hover:bg-red-800  font-semibold  rounded focus:outline-none focus:shadow-outline" href="{% url 'show_post' pk=post.id %}">
                                 <strong> Cancel</strong> </a>
 
                 </div>
