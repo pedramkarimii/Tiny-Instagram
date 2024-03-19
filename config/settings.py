@@ -40,7 +40,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # 'core.middlewares.LoginRequiredMiddleware',
+    'core.middlewares.LoginRequiredMiddleware',
+
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -139,6 +140,13 @@ CKEDITOR_CONFIGS = {
         'width': 500,
     },
 }
+
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# LOG_FILE_PATH = os.path.join(BASE_DIR, 'django_errors.log')
+LOG_FILE_PATH = '/home/pedram/Desktop/project django/core/info.log'
+
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
