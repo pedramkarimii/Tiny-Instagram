@@ -49,12 +49,12 @@
 
 
                     <a
-                            href="#"
+                            href="http://127.0.0.1:8000/profiles/{{ user.pk }}/"
                             class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-200 hover:rounded-md"
                             onclick="redirectToInfo({{ user.pk }})">Info Account</a
                     >
                     <a
-                            href="#"
+                            href="http://127.0.0.1:8000/show_post/{{ user.pk }}/"
                             class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-200 hover:rounded-md"
                             onclick="redirectToPost({{ user.pk }})">Post</a
                     >
@@ -167,7 +167,8 @@
         </li>
         <li>
             <a class="text-sm text-gray-300 hover:text-gray-800"
-               href="{% url 'explorer' pk=user.pk %}"
+{#               href="{% url 'explorer' pk=user.pk %}"#}
+               href="http://127.0.0.1:8000/explorer/{{ user.pk }}/"
                onclick="redirectToExplore({{ user.pk }})"
             >Explorer</a
             >

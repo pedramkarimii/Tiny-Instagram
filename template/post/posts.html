@@ -152,17 +152,7 @@
                         <p class="mt-4 ml-4 text-gray-800">No comment yet!</p>
 
                     {% endfor %}
-                {% for comment in post.comment_set %}
-                {% with replies=comment.reply_comments.all  %}
 
-                {% for reply in replies %}
-                     <div class="comment-item border-t border-gray-200">
-                    <div class="comment-body px-6 py-4">
-                                <p class="text-gray-800">{{ reply.reply }} <br/>  {{ reply.body }}<  /p>
-                            </div>
-                            </div>
-
-                    {% endfor %} {% endwith  %}{% endfor %}
 
                     <div class=" ml-4 mb-2 comment-item border-t border-gray-200">
 

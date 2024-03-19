@@ -2,14 +2,14 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count
 from django.urls import reverse_lazy
 from account.models import User, Profile
-from core.mixin import HttpsOptionMixin as CustomView
+from core.mixin import HttpsOptionNotLogoutMixin as CustomLogoutView
 from post.forms import UpdatePostForm, CreatCommentForm
 from post.models import Post
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 
 
-class HomePostView(CustomView):
+class HomePostView(CustomLogoutView):
     template_name = 'post/posts.html'
     http_method_names = ['get', 'post']
     form_class = CreatCommentForm
@@ -37,7 +37,7 @@ class HomePostView(CustomView):
         return render(request, self.template_name, {'posts': posts, 'form': form})
 
 
-class Explorer(CustomView):
+class Explorer(CustomLogoutView):
     template_name = 'explorer/explorer.html'
     http_method_names = ['get', 'post']
     form_class = CreatCommentForm
@@ -78,7 +78,7 @@ class Explorer(CustomView):
         return render(request, self.template_name, {'form': form})
 
 
-class PostLikeView(CustomView):
+class PostLikeView(CustomLogoutView):
     template_name = 'explorer/explorer.html'
     success_url = reverse_lazy('explorer')
     http_method_names = ['get']
@@ -103,7 +103,7 @@ class PostLikeView(CustomView):
         return redirect(self.get_success_url())
 
 
-class PostDislikeView(CustomView):
+class PostDislikeView(CustomLogoutView):
 
     def get(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
@@ -122,7 +122,7 @@ class PostDislikeView(CustomView):
         return redirect(reverse_lazy('explorer', kwargs={'pk': post_id}))
 
 
-class FollowUserView(CustomView):
+class FollowUserView(CustomLogoutView):
     template_name = 'explorer/explorer.html'
     success_url = reverse_lazy('explorer')
     http_method_names = ['get', 'post']
@@ -143,7 +143,7 @@ class FollowUserView(CustomView):
         return redirect(self.success_url)
 
 
-class UnfollowUserView(CustomView):
+class UnfollowUserView(CustomLogoutView):
     template_name = 'explorer/explorer.html'
     success_url = reverse_lazy('explorer')
     http_method_names = ['get', 'post']
@@ -170,9 +170,9 @@ class UnfollowUserView(CustomView):
             return redirect(self.success_url, user.id)
 
 
-class CreatePostView(LoginRequiredMixin, CustomView):
+class CreatePostView(CustomLogoutView):
     template_name = 'post/create_post.html'
-    success_url = reverse_lazy('show_post')
+    success_url = reverse_lazy('home')
     form_class = UpdatePostForm
     http_method_names = ['get', 'post']
 
@@ -199,7 +199,7 @@ class CreatePostView(LoginRequiredMixin, CustomView):
             return render(request, self.template_name, {'form': form})
 
 
-class UpdatePostView(CustomView):
+class UpdatePostView(CustomLogoutView):
     """
     View for updating a post.
     """
@@ -242,7 +242,7 @@ class UpdatePostView(CustomView):
             return render(request, self.template_name, {'form': form})
 
 
-class DeletePostView(CustomView):
+class DeletePostView(CustomLogoutView):
     """
     View for deleting a post.
     """

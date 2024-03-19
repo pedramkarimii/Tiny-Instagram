@@ -20,6 +20,32 @@ from .models import OptCode, User, Profile
 from django.contrib.auth.views import LoginView, PasswordResetView, PasswordResetDoneView, PasswordResetConfirmView, \
     PasswordResetCompleteView
 
+"""
+ Explanation of the imports:
+ - `datetime`: Module for working with dates and times
+ - `send_mail`: Function for sending emails
+ - `settings`: Django settings module for accessing project settings
+ - `pytz`: Module for timezone support
+ - `messages`: Module for displaying messages to users
+ - `logout`, `update_session_auth_hash`, `login`: Functions for user authentication management
+ - `UserLoginForm`, `UserPasswordResetForm`, `UserLoginEmailForm`: Custom forms for user login and password reset
+ - `render`, `redirect`, `get_object_or_404`: Functions for rendering templates, redirecting requests, and 
+        fetching objects from the database
+ - `reverse_lazy`: Function for generating URLs
+ - `timezone`: Module for working with time zones
+ - `DetailView`, `DeleteView`: Generic class-based views for displaying detail pages and deleting objects
+ - `HttpsOptionLoginMixin`, `HttpsOptionNotLogoutMixin`: Custom mixins for managing HTTPS options 
+        based on login/logout status
+ - `UserRegistrationForm`, `VerifyCodeForm`, `ProfileChangeOrCreationForm`, `CustomUserChangeForm`, 
+        `ChangePasswordForm`: Custom forms for user registration, verification code, profile management, 
+        user information change, and password change
+ - `random`: Module for generating random numbers
+ - `send_otp_code`: Function for sending OTP (One-Time Password) codes
+ - `OptCode`, `User`, `Profile`: Model classes representing OTP codes, users, and user profiles
+ - `LoginView`, `PasswordResetView`, `PasswordResetDoneView`, `PasswordResetConfirmView`, 
+        `PasswordResetCompleteView`: Django's built-in views for user authentication and password reset
+"""
+
 
 class SuccessLoginView(MustBeLogoutCustomView, LoginView):
     """

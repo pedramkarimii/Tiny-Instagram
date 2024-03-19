@@ -1,17 +1,63 @@
 from ckeditor.fields import RichTextField
-from django.core.exceptions import ValidationError
 from django.contrib.auth.forms import ReadOnlyPasswordHashField, PasswordChangeForm, UserCreationForm, PasswordResetForm
 from account.models import User, Profile, OptCode
 from django import forms
+import re
 
 
 class UserLoginForm(forms.Form):
+    """Defines a form for user login using phone number and password.
+    This form allows users to log in using their phone number and password.
+    """
     phone_number = forms.CharField(label='Phone Number', max_length=11)
     password = forms.CharField(label='Password', widget=forms.PasswordInput)
 
     class Meta:
         model = User
         fields = ['phone_number', 'password']
+
+    def clean_phone_number(self):
+        """
+        Clean and validate the phone number field.
+
+        Raises:
+            forms.ValidationError: If the phone number is already registered.
+        """
+
+        phone_number = self.cleaned_data['phone_number']  # noqa
+        OptCode.objects.filter(phone_number=phone_number).delete()
+        pattern = r"09(1[0-9]|3[0-9]|2[0-9]|0[1-9]|9[0-9])[0-9]{7}$"
+        if not re.match(pattern, phone_number):
+            raise forms.ValidationError("Please enter a valid phone number.")
+        user = User.objects.filter(phone_number=phone_number).exists()
+        if user:
+            return phone_number
+
+
+class UserLoginEmailForm(forms.Form):
+    """Defines a form for user login using email and password.
+    This form allows users to log in using their email address and password.
+    """
+    email = forms.EmailField(label='Email', max_length=100)
+    password = forms.CharField(label='Password', widget=forms.PasswordInput)
+
+    def clean_email(self):
+        """
+        Clean and validate the email field.
+
+        Raises:
+            forms.ValidationError: If the email address is already registered,
+                doesn't end with '@gmail.com' or '@yahoo.com',
+                doesn't contain '@', contains spaces, is empty, longer than 254 characters, or doesn't end with '.com'.
+        """
+        email = self.cleaned_data['email']
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@(?:gmail|yahoo)\.com$'
+
+        if not re.match(email_pattern, email):
+            raise forms.ValidationError("Please enter a valid gmail or yahoo email address.")
+        elif ' ' in email:
+            raise forms.ValidationError("Email address cannot contain spaces.")
+        return email
 
 
 class CleanDataUserForm(UserCreationForm):
@@ -30,7 +76,7 @@ class CleanDataUserForm(UserCreationForm):
         clean_username: Method to clean and validate the username field.
         clean_phone_number: Method to clean and validate the phone number field.
     """
-    email = forms.EmailField(label='Email', max_length=254)
+    email = forms.EmailField(label='Email', max_length=100)
     username = forms.CharField(label='Username', max_length=100)
     phone_number = forms.CharField(label='Phone Number', max_length=11)
     password1 = forms.CharField(label='Password', widget=forms.PasswordInput)
@@ -66,25 +112,21 @@ class CleanDataUserForm(UserCreationForm):
 
         Raises:
             forms.ValidationError: If the email address is already registered,
-             doesn't end with '@gmail.com' or '@yahoo.com',
+                doesn't end with '@gmail.com' or '@yahoo.com',
                 doesn't contain '@', contains spaces, is empty, longer than 254 characters, or doesn't end with '.com'.
         """
         email = self.cleaned_data['email']
         user = User.objects.filter(email=email).exists()
+
+        # Regex pattern for email validation
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@(?:gmail|yahoo)\.com$'
+
         if user:
             raise forms.ValidationError("This email address is already registered.")
-        elif not email.endswith('@gmail.com') or email.endswith('@yahoo.com'):
-            raise forms.ValidationError("Please use a gmail address.")
-        elif '@' not in email:
-            raise forms.ValidationError("Please enter a valid email address.")
+        elif not re.match(email_pattern, email):
+            raise forms.ValidationError("Please enter a valid gmail or yahoo email address.")
         elif ' ' in email:
             raise forms.ValidationError("Email address cannot contain spaces.")
-        elif len(email) < 1:
-            raise forms.ValidationError("Email address must be at least 1 characters long.")
-        elif len(email) > 254:
-            raise forms.ValidationError("Email address cannot be longer than 254 characters.")
-        elif not email.endswith('.com'):
-            raise forms.ValidationError("Please enter a valid email address.")
         return email
 
     def clean_username(self):
@@ -92,15 +134,20 @@ class CleanDataUserForm(UserCreationForm):
         Clean and validate the username field.
 
         Raises:
-            forms.ValidationError: If the username is already registered, less than 5 characters long,
-             or longer than 150 characters.
+            forms.ValidationError: If the username is already registered, less than 4 characters long,
+                or if it contains invalid characters.
         """
         username = self.cleaned_data['username']
         user = User.objects.filter(username=username).exists()
+
+        # Regex pattern for username validation
+        username_pattern = r'^[A-Za-z0-9@#_$%^&*()-+=]{4,26}$'
+
         if user:
-            raise forms.ValidationError("This username address is already registered.")
-        elif len(username) < 5:
-            raise forms.ValidationError("Username must be at least 5 characters long.")
+            raise forms.ValidationError("This username is already registered.")
+        elif not re.match(username_pattern, username):
+            raise forms.ValidationError(
+                "Username must contain only letters, digits, or underscores and be at least 4 characters long.")
         return username
 
     def clean_phone_number(self):
@@ -110,8 +157,12 @@ class CleanDataUserForm(UserCreationForm):
         Raises:
             forms.ValidationError: If the phone number is already registered.
         """
-        phone_number = self.cleaned_data['phone_number']
+
+        phone_number = self.cleaned_data['phone_number']  # noqa
         OptCode.objects.filter(phone_number=phone_number).delete()
+        pattern = r"09(1[0-9]|3[0-9]|2[0-9]|0[1-9]|9[0-9])[0-9]{7}$"
+        if not re.match(pattern, phone_number):
+            raise forms.ValidationError("Please enter a valid phone number.")
         user = User.objects.filter(phone_number=phone_number).exists()
         if user:
             raise forms.ValidationError("This phone number address is already registered.")
@@ -128,55 +179,51 @@ class CleanDataUserForm(UserCreationForm):
         cleaned_data = super().clean()
         password1 = cleaned_data.get("password1")
         password2 = cleaned_data.get("password2")
+        pattern = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+])[A-Za-z\d!@#$%^&*()_+]{8,}$"
+
         if password1 and password2 and password1 != password2:
-            raise ValidationError("Password don't match")
+            raise forms.ValidationError("Passwords don't match")
         elif len(password1) < 8:
             raise forms.ValidationError("Password must be at least 8 characters long.")
-        elif password1.isalpha() or password1.isdigit():
-            raise forms.ValidationError("Password must contain at least one letter and one number.")
-        elif not any(char.isdigit() for char in password1):
-            raise forms.ValidationError("Password must contain at least one number.")
-        elif not any(char.isalpha() for char in password1):
-            raise forms.ValidationError("Password must contain at least one letter.")
-        elif not any(char.isupper() for char in password1):
-            raise forms.ValidationError("Password must contain at least one uppercase letter.")
-        elif not any(char.islower() for char in password1):
-            raise forms.ValidationError("Password must contain at least one lowercase letter.")
-        elif not any(char in '!@#$%^&*()_+' for char in password1):
-            raise forms.ValidationError("Password must contain at least one special character.")
+        elif not re.match(pattern, password1):
+            raise forms.ValidationError(
+                "Password must contain at least one uppercase letter, one lowercase letter, one digit,"
+                " and one special character.")
         elif ' ' in password1:
             raise forms.ValidationError("Password cannot contain spaces.")
+
         return password2
 
 
-class AdminCreationForm(CleanDataUserForm):
-    """
-    This class defines a form for creating admin users, extending the CleanDataUserForm.
-
-    Methods:
-        save: Method to save the created user as an admin user.
-
-    Attributes:
-        Constructor method to initialize form fields.
-        Method to save the created user as a regular user.
-    """
-
-    def save(self, commit=True):
-        """
-        Save the created user as an admin user.
-
-        Args:
-            commit (bool, optional): Indicates whether to save the user to the database. Defaults to True.
-
-        Returns:
-            User: The created user instance.
-        """
-        user = super().save(commit=False)
-        user.is_staff = True
-        user.is_admin = True
-        if commit:
-            user.save()
-        return user
+# class AdminCreationForm(CleanDataUserForm):
+#     """
+#     This class defines a form for creating admin users, extending the CleanDataUserForm.
+#
+#     Methods:
+#         save: Method to save the created user as an admin user.
+#
+#     Attributes:
+#         Constructor method to initialize form fields.
+#         Method to save the created user as a regular user.
+#     """
+#
+#     def save(self, commit=True):
+#         """
+#         Save the created user as an admin user.
+#
+#         Args:
+#             commit (bool, optional): Indicates whether to save the user to the database. Defaults to True.
+#
+#         Returns:
+#             User: The created user instance.
+#         """
+#         user = super().save(commit=False)
+#         user.is_staff = True
+#         user.is_admin = True
+#         user.is_superuser = False
+#         if commit:
+#             user.save()
+#         return user
 
 
 class UserRegistrationForm(CleanDataUserForm):
@@ -209,24 +256,20 @@ class UserRegistrationForm(CleanDataUserForm):
         return user
 
 
-class UserChangeForm(forms.ModelForm):
+class UserChangeForm(CleanDataUserForm):
     """
     This class defines a form for changing user information.
 
     Attributes:
         password (ReadOnlyPasswordHashField): Field for displaying password, with a link to change it.
     """
+
     password = ReadOnlyPasswordHashField(
         help_text="You can change using password <a href=\"../password\">this form</a>")
 
     class Meta:
         model = User
         fields = ('email', 'phone_number', 'username', 'password', 'last_login')
-        widgets = {
-            'email': forms.TextInput(attrs={'class': 'form-control'}),
-            'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
-            'username': forms.TextInput(attrs={'class': 'form-control'}),
-        }
         labels = {
             'email': 'Email',
             'phone_number': 'Phone Number',
@@ -252,71 +295,79 @@ class UserChangeForm(forms.ModelForm):
         }
 
 
-class UserChangePasswordForm(forms.ModelForm):
-    """
-    This class defines a form for changing user password.
-
-    Attributes:
-        password1 (forms.CharField): Field for entering new password.
-        password2 (forms.CharField): Field for confirming new password.
-
-    Methods:
-        clean_password2: Method to clean and validate the confirmation password field.
-        save: Method to save the changed password.
-
-    """
-    password1 = forms.CharField(label='password', widget=forms.PasswordInput)
-    password2 = forms.CharField(label='confirm_password', widget=forms.PasswordInput)
-
-    class Meta:
-        model = User
-        fields = ('username', 'email', 'phone_number')
-
-    def clean_password2(self):
-        """
-        Clean and validate the confirmation password field.
-
-        Raises:
-            forms.ValidationError: If the passwords don't match or if the password fails the specified criteria.
-        """
-        cleaned_data = super().clean()
-        password1 = cleaned_data.get("password1")
-        password2 = cleaned_data.get("password2")
-        if password1 and password2 and password1 != password2:
-            raise ValidationError("Password don't match")
-        elif len(password1) < 8:
-            raise forms.ValidationError("Password must be at least 8 characters long.")
-        elif password1.isalpha() or password1.isdigit():
-            raise forms.ValidationError("Password must contain at least one letter and one number.")
-        elif not any(char.isdigit() for char in password1):
-            raise forms.ValidationError("Password must contain at least one number.")
-        elif not any(char.isalpha() for char in password1):
-            raise forms.ValidationError("Password must contain at least one letter.")
-        elif not any(char.isupper() for char in password1):
-            raise forms.ValidationError("Password must contain at least one uppercase letter.")
-        elif not any(char.islower() for char in password1):
-            raise forms.ValidationError("Password must contain at least one lowercase letter.")
-        elif not any(char in '!@#$%^&*()_+' for char in password1):
-            raise forms.ValidationError("Password must contain at least one special character.")
-        elif ' ' in password1:
-            raise forms.ValidationError("Password cannot contain spaces.")
-        return password2
-
-    def save(self, commit=True):
-        """
-        Save the changed password.
-
-        Args:
-            commit (bool, optional): Indicates whether to save the user to the database. Defaults to True.
-
-        Returns:
-            User: The user instance with the changed password.
-        """
-        user = super().save(commit=False)
-        user.set_password(self.cleaned_data['password1'])
-        if commit:
-            user.save()
-        return user
+# class UserChangePasswordForm(forms.ModelForm):
+#     """
+#     This class defines a form for changing user password.
+#
+#     Attributes:
+#         password1 (forms.CharField): Field for entering new password.
+#         password2 (forms.CharField): Field for confirming new password.
+#
+#     Methods:
+#         clean_password2: Method to clean and validate the confirmation password field.
+#         save: Method to save the changed password.
+#
+#     """
+#     password1 = forms.CharField(label='password', widget=forms.PasswordInput)
+#     password2 = forms.CharField(label='confirm_password', widget=forms.PasswordInput)
+#
+#     class Meta:
+#         model = User
+#         fields = ('username', 'email', 'phone_number')
+#
+#     def clean_phone_number(self):
+#         """
+#         Clean and validate the phone number field.
+#
+#         Raises:
+#             forms.ValidationError: If the phone number is already registered.
+#         """
+#
+#         phone_number = self.cleaned_data['phone_number']
+#         pattern = r"09(1[0-9]|3[0-9]|2[0-9]|0[1-9]|9[0-9])[0-9]{7}$"
+#         if not re.match(pattern, phone_number):
+#             raise forms.ValidationError("Please enter a valid phone number.")
+#
+#     def clean_password2(self):
+#         """
+#         Clean and validate the confirmation password field.
+#
+#         Raises:
+#             forms.ValidationError: If the passwords don't match or if the password fails the specified criteria.
+#         """
+#         cleaned_data = super().clean()
+#         password1 = cleaned_data.get("password1")
+#         password2 = cleaned_data.get("password2")
+#         pattern = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+])[A-Za-z\d!@#$%^&*()_+]{8,}$"
+#
+#         if password1 and password2 and password1 != password2:
+#             raise forms.ValidationError("Passwords don't match")
+#         elif len(password1) < 8:
+#             raise forms.ValidationError("Password must be at least 8 characters long.")
+#         elif not re.match(pattern, password1):
+#             raise forms.ValidationError(
+#                 "Password must contain at least one uppercase letter, one lowercase letter, one digit,"
+#                 " and one special character.")
+#         elif ' ' in password1:
+#             raise forms.ValidationError("Password cannot contain spaces.")
+#
+#         return password2
+#
+#     def save(self, commit=True):
+#         """
+#         Save the changed password.
+#
+#         Args:
+#             commit (bool, optional): Indicates whether to save the user to the database. Defaults to True.
+#
+#         Returns:
+#             User: The user instance with the changed password.
+#         """
+#         user = super().save(commit=False)
+#         user.set_password(self.cleaned_data['password1'])
+#         if commit:
+#             user.save()
+#         return user
 
 
 class ChangePasswordForm(PasswordChangeForm):

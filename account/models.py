@@ -7,7 +7,7 @@ from ckeditor.fields import RichTextField
 """
           +-------------------+            1           +-------------------+
           |       User        |------------------------|      Profile      |
-          +-------------------+          1             +-------------------+
+          +-------------------+            1           +-------------------+
           | id                |<-----------------------| id                |
           | username          |                        | user_id     FK    |
           | email             |                        | followers_id      |
@@ -46,6 +46,7 @@ class User(BaseModelUserMixin):
 
     Attributes:
         email (EmailField): The email address of the user.
+        username (CharField): The username of the user.
         phone_number (CharField): The phone number of the user.
         creat_time (DateTimeField): The timestamp indicating the creation time of the user record.
         update_time (DateTimeField): The timestamp indicating the last update time of the user record.
@@ -81,9 +82,6 @@ class User(BaseModelUserMixin):
     def __str__(self):
         """Method to return a string representation of the User object."""
         return self.username
-
-    # def get_by_natural_key(self, username):
-    #     return self.get(username=username)
 
 
 class Profile(models.Model):
@@ -177,23 +175,6 @@ class Profile(models.Model):
         """Property method that returns the full name of the user with each word capitalized."""
         return self.full_name.title()
 
-    def get_follower_following(self, pk):
-        """Method to get the followers of a user."""
-        followers = self.followers.objects.get(pk=pk)
-        following = self.following.objects.get(pk=pk)
-        if followers and followers.is_active and not followers.exists():
-            return followers
-        elif following and following.is_active and not following.exists():
-            return following
-        else:
-            return None
-
-    def get_follower_following_count(self, pk):
-        """Method to get the number of followers and following of a user."""
-        followers = self.followers.objects.filter(pk=pk).count()
-        following = self.following.objects.filter(pk=pk).count()
-        return followers, following
-
 
 class OptCode(models.Model):
     """
@@ -220,6 +201,7 @@ class OptCode(models.Model):
     """
     code = models.PositiveSmallIntegerField()
     phone_number = models.CharField(max_length=11, unique=True)
+    email = models.EmailField(max_length=100, unique=True)
     created = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -1,11 +1,7 @@
 from django.contrib import admin
 from account.models import User, Profile, OptCode
-from .forms import UserChangeForm, ProfileForm, UserChangePasswordForm
+from .forms import UserChangeForm, ProfileForm, CleanDataUserForm
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-
-"""
-Admin configuration for managing User, Profile, and OptCode models.
-"""
 
 
 class ProfileInline(admin.StackedInline):
@@ -38,7 +34,7 @@ class UserAdmin(BaseUserAdmin):
     Customizes the User admin interface.
     """
     form = UserChangeForm
-    add_form = UserChangePasswordForm
+    add_form = CleanDataUserForm
     model = User
     list_display = ('username', 'email', 'phone_number', 'is_admin', 'is_superuser', 'is_staff', 'is_active')
     list_filter = ('is_admin', 'is_active')
@@ -103,7 +99,7 @@ class OptCodeAdmin(admin.ModelAdmin):
     Admin configuration for managing OptCode model.
     """
     model = OptCode
-    list_display = ('code', 'phone_number', 'created')
+    list_display = ('code', 'email', 'phone_number', 'created')
     search_fields = ('phone_number',)
     ordering = ('created',)
     row_id_fields = ('phone_number',)
