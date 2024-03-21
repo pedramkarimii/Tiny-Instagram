@@ -25,7 +25,7 @@ class Post(models.Model):
     owner = models.ForeignKey(Profile, on_delete=models.CASCADE, related_query_name='posts')
     body = RichTextField()
     post_picture = models.ImageField(upload_to='post_picture/%Y/%m/%d/')
-    title = models.SlugField(max_length=100, unique=True, editable=True)
+    title = models.CharField(max_length=255)
     likes = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='post_likes', null=True, blank=True)
     dislikes = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='post_dislikes', null=True, blank=True)
     is_deleted = models.BooleanField(default=False)
@@ -39,28 +39,10 @@ class Post(models.Model):
         return f'{self.owner} - {self.title} - {self.update_time}'
 
     class Meta:
-        ordering = ['-create_time']
+        ordering = ('-update_time', '-create_time')
         verbose_name = 'Post'
         verbose_name_plural = 'Posts'
         get_latest_by = '-create_time'
-
-        constraints = [
-            models.UniqueConstraint(fields=['owner', 'title'], name='owner_slug_unique'),
-        ]
-
-    def like_count(self):
-        return Profile.objects.filter(post_likes=self).count()
-
-    def post_likes(self, users):
-        user_like = Profile.objects.get(user=users)
-        list_of_likes = []
-        dislikes_of_likes = []
-
-        list_of_likes.extend(user_like)
-        dislikes_of_likes.remove(user_like)
-
-    def dislike_count(self):
-        return Profile.objects.filter(post_dislikes=self).count()
 
 
 class Comment(models.Model):
@@ -79,10 +61,7 @@ class Comment(models.Model):
         return f'{self.owner} - {self.post} - {self.update_time}'
 
     class Meta:
-        ordering = ['-create_time']
+        ordering = ('-update_time', '-create_time')
         verbose_name = 'Comment'
         verbose_name_plural = 'Comments'
         get_latest_by = '-create_time'
-        # constraints = [
-        #     models.UniqueConstraint(fields=['owner', 'post'], name='owner_post_unique')
-        # ]

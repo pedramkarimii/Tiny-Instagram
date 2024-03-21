@@ -151,62 +151,138 @@ class CreatePostView(MustBeLogingCustomView):
                 messages.success(request, 'Post created successfully!')
                 return redirect(self.next_page_create_post)
             else:
-                post.save()
-                messages.success(request, 'Post created successfully!')
-                return render(request, self.template_create_post, {'form': form})
-        elif not form.is_valid():
-            messages.error(request, 'Failed to create post')
-            return redirect(self.template_create_post)
+                messages.error(request, 'Failed to create post')
+                return redirect(self.template_create_post)
         else:
             return render(request, self.template_create_post, {'form': form})
 
 
-class FollowUserView(MustBeLogingCustomView):
-    template_name = 'explorer/explorer.html'
-    success_url = reverse_lazy('explorer')
+class UpdatePostView(MustBeLogingCustomView):
+    """
+    View for updating a post.
+    The UpdatePostView class handles both GET and POST requests for updating a post.
+    - The setup method initializes the view attributes including the template name, form class, files, user,
+        next page URL, and retrieves the post instance.
+    - The get method renders the form for updating a post with the existing post data filled in.
+    - The post method processes the form submission for updating a post.
+    - If the form is valid, it updates the post with the new data, saves it, and redirects to the page displaying
+        the updated post.
+    - If the form is invalid, it displays an error message and renders the form again with the error messages.
+    """
     http_method_names = ['get', 'post']
 
-    def get(self, request, *args, **kwargs):
-        return redirect(self.success_url)
+    def setup(self, request, *args, **kwargs):
+        """Initialize attributes for the template_update_post, form class, files, user,
+                   next_page_show_post, next_page_show_update_post and retrieve the post instance."""
+        self.template_update_post = 'post/update_post.html'  # noqa
+        self.form_class = UpdatePostForm  # noqa
+        self.files = request.FILES  # noqa
+        self.user = request.user  # noqa
+        self.next_page_show_post = reverse_lazy('show_post', kwargs={'pk': kwargs['pk']})  # noqa
+        self.next_page_show_update_post = reverse_lazy('update_post', kwargs={'pk': kwargs['pk']})  # noqa
+        self.post_instance = get_object_or_404(Post, pk=kwargs['pk'])  # noqa
+        return super().setup(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):  # noqa
+        """
+        Renders the form for updating a post.
+        """
+        form = self.form_class(instance=self.post_instance)
+        return render(request, self.template_update_post, {'form': form, 'post': self.post_instance})
+
+    def post(self, request, *args, **kwargs):  # noqa
+        """
+        Processes the form submission for updating a post.
+        """
+        form = self.form_class(request.POST, self.files, instance=self.post_instance)
+        if form.is_valid():
+            posts = form.save(commit=False)
+            posts.owner = Profile.objects.get(user=self.user)
+            if 'post_picture' in self.files:
+                posts.post_picture = self.files['post_picture']
+                posts.save()
+                messages.success(request, 'Post updated successfully')
+                return redirect(self.next_page_show_post)
+            else:
+                messages.error(request, 'Failed to update post add or change post picture')
+                return redirect(self.next_page_show_update_post)
+        else:
+            messages.error(request, 'Failed to update post')
+            return render(request, self.template_update_post, {'form': form})
+
+
+class FollowUserView(MustBeLogingCustomView):
+    """A view to handle following/unfollowing users."""
+    http_method_names = ['post']
+
+    def setup(self, request, *args, **kwargs):
+        """
+        Get the profile of the user to be followed/unfollowed,
+        the profile of the logged-in user,
+        the logged-in user, and
+        check if the logged-in user is already following the user profile
+        URL to redirect after following/unfollowing.
+        """
+        self.users_profile = get_object_or_404(Profile, pk=kwargs['pk'])  # noqa
+        self.request_user_profile = request.user.profile  # noqa
+        self.user = request.user  # noqa
+        self.request_user_profile_is_follow = request.user.profile.is_follow  # noqa
+        self.next_page_explorer = reverse_lazy('explorer', kwargs={'pk': kwargs['pk']})  # noqa
+        return super().setup(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        user_id = kwargs.get('user_id')
-        profile = Profile.objects.get(pk=user_id)
-        current_user_profile = request.user.profile
-
-        current_user_profile.following = profile.user
-        current_user_profile.save()
-
-        messages.success(request, f"You are now following {profile.full_name}")
-
-        return redirect(self.success_url)
-
-
-class UnfollowUserView(MustBeLogingCustomView):
-    template_name = 'explorer/explorer.html'
-    success_url = reverse_lazy('explorer')
-    http_method_names = ['get', 'post']
-
-    def get(self, request, user_id):
-        user = User.objects.get(id=user_id)
-        profile = Profile.objects.get(followers=request.uer, following=user)
-        if profile.exists():
-            messages.error(request, f"You are already following {user.username}")
+        """Handle POST request for following/unfollowing.
+        Retrieve the user profile.
+        Check if the user is not already followed
+        If not followed:
+               - Check if the user is trying to follow themselves.
+               - Check if the user is already following this user.
+               - Update following/follower relationships.
+               - Set appropriate flags and save changes.
+               - Show success message
+               Check if the user is already followed
+               If already followed:
+               - Check if the user is trying to unfollow themselves.
+               - Check if the user is not following this user.
+               - Update following/follower relationships.
+               - Set appropriate flags and save changes.
+               - Show success message.
+               Handle error case."""
+        user_profile = self.users_profile
+        if user_profile.is_follow == False:  # noqa
+            if user_profile == self.request_user_profile:
+                messages.error(request, "You cannot follow yourself.")
+                return redirect(self.next_page_explorer)
+            if request.user.profile.following == user_profile.user:
+                messages.error(request, "You are already following this user.")
+                return redirect(self.next_page_explorer)
+            request.user.profile.following = user_profile.user
+            user_profile.followers = self.user
+            self.request_user_profile_is_follow = True  # noqa
+            self.request_user_profile.save()
+            user_profile.is_follow = True
+            user_profile.save()
+            messages.success(request, f"You are now following {user_profile.full_name}.")
+            return redirect(self.next_page_explorer)
+        elif user_profile.is_follow == True:  # noqa
+            if user_profile == self.request_user_profile:  # noqa
+                messages.error(request, "You cannot unfollow yourself.")
+                return redirect(self.next_page_explorer)
+            if request.user.profile.following != user_profile.user:
+                messages.error(request, "You are not following this user.")
+                return redirect(self.next_page_explorer)
+            request.user.profile.following = None
+            user_profile.followers = None
+            self.request_user_profile_is_follow = False  # noqa
+            self.request_user_profile.save()
+            user_profile.is_follow = False
+            user_profile.save()
+            messages.success(request, f"You have unfollowed {user_profile.full_name}.")
+            return redirect(self.next_page_explorer)
         else:
-            messages.success(request, f"You are following {user.username}")
-            Profile.objects.create(followers=request.user, following=user)
-        return redirect(self.success_url, user.id)
 
-    def post(self, request, user_id):
-        user = User.objects.get(id=user_id)
-        profile = Profile.objects.get(followers=request.user, following=user)
-        if profile.exists():
-            profile.delete()
-            messages.success(request, f"You have unfollowed {user.username}")
-            return redirect(self.success_url)
-        else:
-            messages.error(request, f"You are not following {user.username}")
-            return redirect(self.success_url, user.id)
+            messages.error(request, "An error occurred. Please try again.")
+            return redirect(self.next_page_explorer)
 
 
 class PostLikeView(MustBeLogingCustomView):
@@ -254,58 +330,6 @@ class PostLikeView(MustBeLogingCustomView):
                 self.post.save()
                 messages.success(request, "You have removed your like from this post")
         return redirect(self.next_page_explorer_post_id)
-
-
-class UpdatePostView(MustBeLogingCustomView):
-    """
-    View for updating a post.
-    The UpdatePostView class handles both GET and POST requests for updating a post.
-    - The setup method initializes the view attributes including the template name, form class, files, user,
-        next page URL, and retrieves the post instance.
-    - The get method renders the form for updating a post with the existing post data filled in.
-    - The post method processes the form submission for updating a post.
-    - If the form is valid, it updates the post with the new data, saves it, and redirects to the page displaying
-        the updated post.
-    - If the form is invalid, it displays an error message and renders the form again with the error messages.
-    """
-    http_method_names = ['get', 'post']
-
-    def setup(self, request, *args, **kwargs):
-        self.template_update_post = 'post/update_post.html'  # noqa
-        self.form_class = UpdatePostForm  # noqa
-        self.files = request.FILES  # noqa
-        self.user = request.user  # noqa
-        self.next_page_show_post = reverse_lazy('show_post', kwargs={'pk': kwargs['pk']})  # noqa
-        self.post_instance = get_object_or_404(Post, pk=kwargs['pk'])  # noqa
-        return super().setup(request, *args, **kwargs)
-
-    def get(self, request, *args, **kwargs):  # noqa
-        """
-        Renders the form for updating a post.
-        """
-        form = self.form_class(instance=self.post_instance)
-        return render(request, self.template_update_post, {'form': form, 'post': self.post_instance})
-
-    def post(self, request, *args, **kwargs):  # noqa
-        """
-        Processes the form submission for updating a post.
-        """
-        form = self.form_class(request.POST, self.files, instance=self.post_instance)
-        if form.is_valid():
-            posts = form.save(commit=False)
-            posts.owner = Profile.objects.get(user=self.user)
-            if 'post_picture' in self.files:
-                posts.post_picture = self.files['post_picture']
-                posts.save()
-                messages.success(request, 'Post updated successfully')
-                return redirect(self.next_page_show_post)
-            else:
-                messages.error(request, 'Failed to update post')
-                return render(request, self.template_update_post, {'form': form}) and redirect(
-                    self.template_update_post)
-        else:
-            messages.error(request, 'Failed to update post')
-            return render(request, self.template_update_post, {'form': form})
 
 
 class DeletePostView(MustBeLogingCustomView):

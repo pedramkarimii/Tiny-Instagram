@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
@@ -53,8 +54,9 @@ class HttpsOptionNotLogoutMixin(View):
     def setup(self, request, *args, **kwargs):  # noqa
         """Initialize the next_page_create_profile, get profile, authenticate."""
         self.next_page_home = reverse_lazy('home')  # noqa
+        self.next_page_create_profile = reverse_lazy('create_profile')  # noqa
         self.template_http_method_not_allowed = 'base/http_method_not_allowed.html'  # noqa
-        self.authenticate = request.user.is_authenticated  # noqa
+        self.authenticate_user = request.user.is_authenticated  # noqa
         return super().setup(request, *args, **kwargs)
 
     def dispatch(self, request, *args, **kwargs):
@@ -62,15 +64,15 @@ class HttpsOptionNotLogoutMixin(View):
         Dispatch method to handle user authentication status.
         Redirects non-authenticated users to the home page with an error message.
         """
-        if not self.authenticate:
+        if not self.authenticate_user:
             messages.error(
                 request,
                 'You are not login please first login your account.',
                 extra_tags='error',
             )
             return redirect(self.next_page_home)
-        else:
-            return super().dispatch(request, *args, **kwargs)
+
+        return super().dispatch(request, *args, **kwargs)
 
     def options(self, request, *args, **kwargs):
         """
@@ -96,7 +98,8 @@ class HttpsOptionLoginMixin(View):
         """Initialize the next_page_create_profile, get profile, authenticate."""
         self.next_page_home = reverse_lazy('home')  # noqa
         self.template_http_method_not_allowed = 'base/http_method_not_allowed.html'  # noqa
-        self.authenticate = request.user.is_authenticated  # noqa
+        self.authenticate_profile = hasattr(request.user, 'profile')  # noqa
+        self.authenticate_user = request.user.is_authenticated  # noqa
         return super().setup(request, *args, **kwargs)
 
     def dispatch(self, request, *args, **kwargs):
@@ -105,7 +108,7 @@ class HttpsOptionLoginMixin(View):
         If the user is authenticated, redirect to the home page.
         Otherwise, proceed with the default dispatch behavior.
         """
-        if self.authenticate:
+        if self.authenticate_user:
             messages.warning(request, 'You are already login.', extra_tags='warning')
             return redirect(self.next_page_home)
 

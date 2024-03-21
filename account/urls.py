@@ -1,24 +1,8 @@
 from django.urls import path
-from .views import (
-    UserLoginView,
-    UserLogoutView,
-    UserRegisterView,
-    UserRegistrationVerifyCodeView,
-    UserChangeView,
-    ChangePasswordView,
-    CreateProfileView,
-    ProfileDetailView,
-    DeleteProfileView,
-    DeleteUserView,
-    LoginVerifyCodeView,
-    SuccessLoginView,
-    UserPasswordResetView,
-    UserPasswordResetDoneView,
-    UserPasswordResetConfirmView,
-    UserPasswordResetCompleteView,
-    UserLoginEmailView,
-    LoginVerifyCodeEmailView,
-)
+from account.views import UserLoginView, UserLogoutView, UserRegisterView, UserRegistrationVerifyCodeView, \
+    UserChangeView, ChangePasswordView, CreateProfileView, ProfileDetailView, DeleteProfileView, LoginVerifyCodeView, \
+    DeleteUserView, SuccessLoginView, UserPasswordResetView, UserPasswordResetDoneView, UserPasswordResetConfirmView, \
+    UserPasswordResetCompleteView, UserLoginEmailView, LoginVerifyCodeEmailView
 
 urlpatterns = [
     # Authentication URLs

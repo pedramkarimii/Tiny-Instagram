@@ -40,7 +40,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'core.middlewares.LoginRequiredMiddleware',
+    # 'core.middlewares.LoginRequiredMiddleware',
 
 ]
 
@@ -156,8 +156,7 @@ EMAIL_HOST_PASSWORD = 'kzkq zrty ryjz stii'
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
 DEFAULT_FROM_EMAIL = 'Tiny Instagram'
-# DEFAULT_TO_EMAIL = 'pedram.9060@gmail.com'
-# DEFAULT_SUBJECT = 'Send password'
-# DEFAULT_MESSAGE = 'Your password '
-# DEFAULT_REPLY_TO = 'pedram.9060@gmail.com'
-# DEFAULT_REPLY_TO_NAME = 'pedram.9060@gmail.com'
+
+
+
+

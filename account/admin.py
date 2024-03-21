@@ -1,6 +1,6 @@
 from django.contrib import admin
 from account.models import User, Profile, OptCode
-from .forms import UserChangeForm, ProfileForm, CleanDataUserForm
+from .forms import UserChangeForm, ProfileForm
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 
@@ -34,7 +34,7 @@ class UserAdmin(BaseUserAdmin):
     Customizes the User admin interface.
     """
     form = UserChangeForm
-    add_form = CleanDataUserForm
+    # add_form = ChangePasswordForm
     model = User
     list_display = ('username', 'email', 'phone_number', 'is_admin', 'is_superuser', 'is_staff', 'is_active')
     list_filter = ('is_admin', 'is_active')
@@ -42,7 +42,7 @@ class UserAdmin(BaseUserAdmin):
         ('Change personal info', {'fields': ('email', 'phone_number', 'username', 'password')}),
         ('Permissions',
          {'fields': (
-             'is_superuser', 'is_active', 'is_admin', 'is_staff', 'is_deleted', 'creat_time', 'update_time',
+             'is_superuser', 'is_active', 'is_admin', 'is_staff', 'is_deleted', 'create_time', 'update_time',
              'last_login',
              'groups', 'user_permissions')}),
 
@@ -54,9 +54,9 @@ class UserAdmin(BaseUserAdmin):
          ),
     )
     row_id_fields = ('phone_number',)
-    readonly_fields = ('creat_time', 'update_time', 'last_login')
+    readonly_fields = ('create_time', 'update_time', 'last_login')
     search_fields = ('email',)
-    ordering = ('-creat_time',)
+    ordering = ('-create_time',)
     filter_horizontal = ('groups', 'user_permissions')
 
     def get_form(self, request, obj=None, **kwargs):

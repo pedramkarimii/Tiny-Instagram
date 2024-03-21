@@ -48,7 +48,7 @@ class User(BaseModelUserMixin):
         email (EmailField): The email address of the user.
         username (CharField): The username of the user.
         phone_number (CharField): The phone number of the user.
-        creat_time (DateTimeField): The timestamp indicating the creation time of the user record.
+        create_time (DateTimeField): The timestamp indicating the creation time of the user record.
         update_time (DateTimeField): The timestamp indicating the last update time of the user record.
         is_deleted (BooleanField): Flag indicating whether the user has been deleted or not.
         is_active (BooleanField): Flag indicating whether the user is active or not.
@@ -151,7 +151,7 @@ class Profile(models.Model):
     objects = DeleteManagerMixin()  # Assuming UserManager is a custom manager < soft delete >
 
     class Meta:
-        ordering = ["-update_time"]
+        ordering = ('-update_time', '-create_time')
         verbose_name = 'Profile'
         verbose_name_plural = 'Profiles'
 
@@ -205,7 +205,7 @@ class OptCode(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["-created"]
+        ordering = ('created',)
         verbose_name = 'OTP'
         verbose_name_plural = 'OTPs'
         unique_together = ['code', 'phone_number']

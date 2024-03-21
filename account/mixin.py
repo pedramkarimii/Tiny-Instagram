@@ -13,7 +13,7 @@ class BaseModelUserMixin(AbstractBaseUser, PermissionsMixin):
     as a mixin with other user models to avoid code duplication.
 
     Attributes:
-        creat_time (DateTimeField): The timestamp indicating the creation time of the user record.
+        create_time (DateTimeField): The timestamp indicating the creation time of the user record.
         update_time (DateTimeField): The timestamp indicating the last update time of the user record.
         is_deleted (BooleanField): Flag indicating whether the user has been deleted or not.
         is_active (BooleanField): Flag indicating whether the user is active or not.
@@ -35,7 +35,7 @@ class BaseModelUserMixin(AbstractBaseUser, PermissionsMixin):
         has_module_perms: Method to check if the user has permissions for a specific module.
     """
 
-    creat_time = models.DateTimeField(auto_now_add=True, editable=False)
+    create_time = models.DateTimeField(auto_now_add=True, editable=False)
     update_time = models.DateTimeField(auto_now=True, editable=False)
     is_deleted = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
@@ -49,10 +49,12 @@ class BaseModelUserMixin(AbstractBaseUser, PermissionsMixin):
 
     class Meta:
         abstract = True
-        ordering = ['-update_time', 'is_deleted']
+        ordering = ('-update_time', '-create_time', 'is_deleted')
         verbose_name = 'user'
         verbose_name_plural = 'users'
         constraints = [
             models.UniqueConstraint(fields=['username', 'email'], name='unique_username')
-
+        ]
+        indexes = [
+            models.Index(fields=['username', 'email'], name='index_username_email')
         ]

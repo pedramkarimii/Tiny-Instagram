@@ -249,9 +249,7 @@ class UserRegisterView(MustBeLogoutCustomView):
             }
             messages.success(request, 'Code sent to your phone number', extra_tags='success')
             return redirect(self.next_page_verify_code)
-        elif not form.is_valid():
-            messages.error(request, 'Please Invalid form!!!', extra_tags='error')
-            return redirect(self.next_page_register_user)
+
         return render(request, self.template_create_user, {'form': form})
 
 
@@ -336,9 +334,6 @@ class ChangePasswordView(MustBeLogingCustomView):
             update_session_auth_hash(request, user)
             messages.success(request, 'Your password was successfully updated!')
             return redirect(self.next_page_home)
-        elif not form.is_valid():
-            messages.error(request, 'Please Invalid form!!!', extra_tags='error')
-            return redirect(self.next_page_change_pass)
         return render(request, self.template_change_password, {'form': form})
 
 
@@ -357,7 +352,7 @@ class UserLoginEmailView(MustBeLogoutCustomView):
 
     def send_otp_email(self, email, otp):
 
-        user = User.objects.filter(email=email).exists()
+        user = User.objects.get(email=email)
         if user:
             subject = 'Your OTP for Verification'
             message = f'Your OTP for login is (Expiry date two minutes): {otp}'
@@ -367,11 +362,11 @@ class UserLoginEmailView(MustBeLogoutCustomView):
             OptCode.objects.create(email=email, code=otp)
             messages.success(self.request, 'Code sent to your Email', extra_tags='success')
         elif not user:
-            messages.success(self.request, 'Code sent to your Email', extra_tags='success')
-            return redirect(self.next_page_login_verify_code_email)
+            messages.success(self.request, 'Invalid email or password', extra_tags='success')
+            return redirect(self.next_page_login_email)
         else:
-            messages.success(self.request, 'Code sent to your Email', extra_tags='success')
-            return redirect(self.next_page_login_verify_code_email)
+            messages.success(self.request, 'Invalid email or password', extra_tags='success')
+            return redirect(self.next_page_login_email)
 
     def get(self, request):
         return render(request, self.template_login_email, {'form': self.form_class()})
@@ -387,9 +382,7 @@ class UserLoginEmailView(MustBeLogoutCustomView):
                 'password': form.cleaned_data['password'],
             }
             return redirect(self.next_page_login_verify_code_email)
-        elif not form.is_valid():
-            messages.error(request, 'Please Invalid form!!!', extra_tags='error')
-            return redirect(self.next_page_login_email)
+
         return render(request, self.template_login_email, {'form': form})
 
 
@@ -532,9 +525,6 @@ class UserChangeView(MustBeLogingCustomView):
             form.save()
             messages.success(request, 'User information updated successfully', extra_tags='success')
             return redirect(self.next_page_home)
-        elif not form.is_valid():
-            messages.error(request, 'Please Invalid form!!!', extra_tags='error')
-            return redirect(self.next_page_change_user)
         return render(request, self.template_change_user, {'form': form})
 
 
