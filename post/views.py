@@ -36,12 +36,17 @@ class HomePostView(MustBeLogingCustomView):
         )
         return super().setup(request, *args, **kwargs)
 
-    # def get(self, request, *args, **kwargs):
-    #     """Handle GET requests.
-    #     Render the template to display posts."""
-    #     return render(request, self.template_posts, {'posts': self.posts, 'form': self.form_class()})
-
     def get(self, request, *args, **kwargs):
+        """
+        Handle GET requests.
+        - Initialize the search form with the request data.
+        - Get the search query from the request GET parameters.
+        - If a search query exists:
+            - Annotate the posts queryset with a similarity score based on the search query.
+            - Filter the posts queryset based on the similarity score, considering only posts with a similarity greater than 0.1.
+            - Order the filtered posts by similarity score in descending order.
+        - Render the template to display the posts along with the search form.
+        """
         form_search = self.form_class_search(request.GET)
         search_query = request.GET.get('search')
         if search_query:
