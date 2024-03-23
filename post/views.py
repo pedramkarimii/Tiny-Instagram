@@ -27,6 +27,7 @@ class HomePostView(MustBeLogingCustomView):
         """Initialize the template_posts, form_class, next_page_show_post, user, posts."""
         self.template_posts = 'post/posts.html'  # noqa
         self.form_class = CreatCommentForm  # noqa
+        self.form_class_search = SearchForm  # noqa
         self.next_page_show_post = reverse_lazy('show_post', kwargs={'pk': kwargs['pk']})  # noqa
         self.user = request.user  # noqa
         self.posts = Post.objects.filter(owner=self.user.profile, is_deleted=False).annotate(  # noqa
@@ -35,10 +36,22 @@ class HomePostView(MustBeLogingCustomView):
         )
         return super().setup(request, *args, **kwargs)
 
+    # def get(self, request, *args, **kwargs):
+    #     """Handle GET requests.
+    #     Render the template to display posts."""
+    #     return render(request, self.template_posts, {'posts': self.posts, 'form': self.form_class()})
+
     def get(self, request, *args, **kwargs):
-        """Handle GET requests.
-        Render the template to display posts."""
-        return render(request, self.template_posts, {'posts': self.posts, 'form': self.form_class()})
+        form_search = self.form_class_search(request.GET)
+        search_query = request.GET.get('search')
+        if search_query:
+            self.posts = self.posts.annotate(
+                similarity=TrigramSimilarity('title', search_query) +
+                           TrigramSimilarity('body', search_query)  # noqa
+            ).filter(similarity__gt=0.1).order_by('-similarity')
+
+        return render(request, self.template_posts,
+                      {'posts': self.posts, 'form': self.form_class(), 'form_search': form_search})
 
     def post(self, request, *args, **kwargs):
         """Handle POST requests.

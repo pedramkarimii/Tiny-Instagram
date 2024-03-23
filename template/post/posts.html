@@ -3,6 +3,22 @@
     <title>Post</title>
 {% endblock %}
 {% block post %}
+         <div class="hidden lg:block">
+        <form method="get" class="relative flex rounded-full ml-8 ">
+
+            <a href="{% url "show_post" user.id %}" class=" me-1 ms-1 ps-1 pt-2  pe-1 bg-gray-400 text-gray-800 rounded-full text-sm hover:bg-indigo-400 focus:bg-indigo-600 focus:outline-none" ><button
+            >
+                Search
+            </button></a>
+            <input
+                    type="text"
+                    name="search"
+                    placeholder=" enter your search here"
+                    class="text-sm p-2 rounded-full flex-1 mr-8 text-gray-100 focus:outline-none bg-gradient-to-r from-gray-700  to-gary-500 bg-clip-padding backdrop-filter backdrop-blur-sm bg-opacity-70 "
+            />
+
+        </form>
+    </div>
     {% for post in posts %}
 
 
