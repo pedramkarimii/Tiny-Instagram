@@ -21,7 +21,6 @@ urlpatterns = [
     path('show_post/<int:pk>/', HomePostView.as_view(), name='show_post'),
     path('explorer/<int:pk>/', Explorer.as_view(), name="explorer"),
     path('follow/<int:pk>/', FollowUserView.as_view(), name='follow_user'),
-    # path('unfollow/<int:pk>/', UnfollowUserView.as_view(), name='unfollow_user'),
     path('like/<int:post_id>/', PostLikeView.as_view(), name='like_user'),
     path('post/<int:pk>/update/', UpdatePostView.as_view(), name='update_post'),
     path('post/<int:pk>/delete/', DeletePostView.as_view(), name='delete_post'),

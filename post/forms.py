@@ -2,6 +2,13 @@ from django import forms
 from .models import Post, Comment
 
 
+class SearchForm(forms.Form):
+    """
+    Form for searching.
+    """
+    search = forms.CharField(label='Search', max_length=100)
+
+
 class UpdatePostForm(forms.ModelForm):
     """
     Form for updating a post.

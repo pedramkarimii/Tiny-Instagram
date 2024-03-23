@@ -1,54 +1,213 @@
-{% extends "base/bases.html" %} {% block title %}
-<title>Info account</title>
-{% endblock %} {% block info_account %}
-
-    <div class="flex justify-center max-w-3xl mb-8 mt-2 mx-auto h-32">
-  <div class="overflow-x-auto mt-2 mb-8">
-
-    <table class="table-auto h-full  rounded-lg border border-gray-300">
-      <thead>
-        <tr class="bg-gradient-to-r from-gray-300 via-gray-100  text-gray-700 ">
-          <th class="px-4 py-2 text-center"><strong>ID</strong></th>
-          <th class="px-4 py-2 text-center"><strong>Full Name</strong></th>
-          <th class="px-4 py-2 text-center"><strong>Posts</strong></th>
-          <th class="px-4 py-2 text-center"><strong>Name</strong></th>
-          <th class="px-4 py-2 text-center"><strong>Last Name</strong></th>
-          <th class="px-4 py-2 text-center"><strong>Gender</strong></th>
-          <th class="px-4 py-2 text-center"><strong>Age</strong></th>
-          <th class="px-4 py-2 text-center"><strong>Bio</strong></th>
-
-        </tr>
-      </thead>
-      <tbody>
-      {% if request.user.is_authenticated %}
-      
-        <tr class="bg-gradient-to-r from-gray-300 via-gray-100  text-gray-800   ">
-          <td class="px-4 py-2 text-center">{{ profile.pk }}</td>
-          <td class="px-4 py-2 text-center">{{ profile.full_name }}</td>
-          <td class="px-4 py-2 text-center">{{ profile.post_set.count }}</td>
-          <td class="px-4 py-2 text-center">{{ profile.name }}</td>
-          <td class="px-4 py-2 text-center">{{ profile.last_name }}</td>
-          <td class="px-4 py-2 text-center">{{ profile.gender }}</td>
-          <td class="px-4 py-2 text-center">{{ profile.age }}</td>
-          <td class="px-4 py-2 text-center">{{ profile.bio | safe }}</td>
-
-
-            {% endif %}
-        </tr>
-      </tbody>
-
-    </table>
-
-  </div>
-    </div>
-    <br><br><br><br>
-    <br><br><br><br>
-    <br><br><br><br>
-    <br><br><br><br>
-
-<style>
-    th {
-        border-bottom: 4px solid rgba(118, 118, 118, 0.31); /* Add a solid black border bottom to th elements */
-    }
-</style>
+{% extends "base/bases.html" %}
+{% block title %}
+    <title>Profile - {{ request.user.username }}</title>
 {% endblock %}
+{% block info_account %}
+    <div class="container mx-auto flex justify-center">
+        <div class="flex items-center">
+            <img src="
+                    {% if profile.profile_picture %}{{ profile.profile_picture.url }}{% else %}https://via.placeholder.com/150{% endif %}"
+                 alt="Profile Picture" class="rounded-full w-20 h-20 mr-6">
+            <div>
+                <h1 class="text-2xl font-semibold">{{ request.user.username }}</h1>
+                <p class="text-gray-600">{{ profile.bio | safe }}</p>
+            </div>
+            <div class="grid grid-cols-3 gap-6">
+                <div class="flex flex-col items-center justify-center">
+                    <h2 class="text-lg font-semibold mb-2">Posts</h2>
+                    <p class="text-xl font-semibold">{{ profile.post_set.count }}</p>
+                </div>
+
+                <div class="flex flex-col items-center justify-center p-4">
+                    <h2 class="text-lg font-semibold mb-2">Followers</h2>
+                    <p class="text-xl font-semibold">{{ followers_count }}</p>
+                </div>
+
+                <div class="flex flex-col items-center justify-center p-4">
+                    <h2 class="text-lg font-semibold mb-2">Following</h2>
+                    <p class="text-xl font-semibold">{{ following_count }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container mx-auto mb-8 mt-8">
+        <div class="overflow-x-auto">
+            <table class="table-auto w-full mt-8 rounded-lg border border-gray-300">
+                <thead>
+                <tr class="bg-gray-200 text-gray-700">
+                    <th class="px-4 py-2 text-center">Username</th>
+                    <th class="px-4 py-2 text-center">Bio</th>
+                    <th class="px-4 py-2 text-center">Full Name</th>
+                    <th class="px-4 py-2 text-center">Name</th>
+                    <th class="px-4 py-2 text-center">Last Name</th>
+                    <th class="px-4 py-2 text-center">Gender</th>
+                    <th class="px-4 py-2 text-center">Age</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% if request.user.is_authenticated %}
+                    <tr class="bg-white text-gray-800">
+                        <td class="px-4 py-2 text-center">{{ request.user.username }}</td>
+                        <td class="px-4 py-2 text-center">{{ profile.bio | safe }}</td>
+                        <td class="px-4 py-2 text-center">{{ profile.full_name }}</td>
+                        <td class="px-4 py-2 text-center">{{ profile.name }}</td>
+                        <td class="px-4 py-2 text-center">{{ profile.last_name }}</td>
+                        <td class="px-4 py-2 text-center">{{ profile.gender }}</td>
+                        <td class="px-4 py-2 text-center">{{ profile.age }}</td>
+                    </tr>
+                {% endif %}
+                </tbody>
+            </table>
+                    <table class="table-auto w-full mt-2 rounded-lg border border-gray-300">
+                <thead>
+                <tr class="bg-gray-200 text-gray-700">
+                    <th class="px-4 py-2 text-center">Followers </th>
+                    <th class="px-4 py-2 text-center">Following </th>
+                </tr>
+                </thead>
+                <tbody>
+                {% if request.user.is_authenticated %}
+
+
+                {% endif %}
+                </tbody>
+                <tr class="bg-white text-gray-800">
+                    <td class="px-4 py-2 text-center">
+                        {% for follower_username in followers_usernames %}
+                            <div>{{ follower_username }}</div>
+                        {% endfor %}
+                    </td>
+                    <td class="px-4 py-2 text-center">
+                        {% for following_username in following_usernames %}
+                            <div>{{ following_username }}</div>
+                        {% endfor %}
+                    </td>
+                </tr>
+
+            </table>
+
+        </div>
+    </div>
+
+
+    {% block custom_css %}
+        <style>
+            th {
+                border-bottom: 2px solid rgba(118, 118, 118, 0.31);
+            }
+        </style>
+    {% endblock %}
+{% endblock %}
+
+{##}
+{##}
+{#{% extends "base/bases.html" %} {% block title %}#}
+{#    <title>Info account</title>#}
+{#{% endblock %} {% block info_account %}#}
+{##}
+{#    <div class="container mx-auto mb-8 mt-8">#}
+{#        <div class="overflow-x-auto">#}
+{#            <table class="table-auto w-full mt-8 rounded-lg border border-gray-300">#}
+{#                <thead>#}
+{#                <tr class="bg-gray-200 text-gray-700">#}
+{#                    <th class="px-4 py-2 text-center">Username</th>#}
+{#                    <th class="px-4 py-2 text-center">Bio</th>#}
+{#                    <th class="px-4 py-2 text-center">Full Name</th>#}
+{#                    <th class="px-4 py-2 text-center">Name</th>#}
+{#                    <th class="px-4 py-2 text-center">Last Name</th>#}
+{#                    <th class="px-4 py-2 text-center">Gender</th>#}
+{#                    <th class="px-4 py-2 text-center">Age</th>#}
+{#                </tr>#}
+{#                </thead>#}
+{#                <tbody>#}
+{#                {% if request.user.is_authenticated %}#}
+{#                    <tr class="bg-white text-gray-800">#}
+{#                        <td class="px-4 py-2 text-center">{{ request.user.username }}</td>#}
+{#                        <td class="px-4 py-2 text-center">{{ profile.bio | safe }}</td>#}
+{#                        <td class="px-4 py-2 text-center">{{ profile.full_name }}</td>#}
+{#                        <td class="px-4 py-2 text-center">{{ profile.name }}</td>#}
+{#                        <td class="px-4 py-2 text-center">{{ profile.last_name }}</td>#}
+{#                        <td class="px-4 py-2 text-center">{{ profile.gender }}</td>#}
+{#                        <td class="px-4 py-2 text-center">{{ profile.age }}</td>#}
+{#                    </tr>#}
+{#                {% endif %}#}
+{#                </tbody>#}
+{#            </table>#}
+{##}
+{##}
+{##}
+{#        </div>#}
+{#    </div>#}
+{#{% endblock %}#}
+{##}
+{#{% block custom_css %}#}
+{#    <style>#}
+{#        th {#}
+{#            border-bottom: 2px solid rgba(118, 118, 118, 0.31); /* Add a solid black border bottom to th elements */#}
+{#        }#}
+{#    </style>#}
+{#{% endblock %}#}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{#{% extends "base/bases.html" %}#}
+{##}
+{#{% block title %}#}
+{#    <title>All Profiles</title>#}
+{#{% endblock %}#}
+{##}
+{#{% block info_account %}#}
+{#    <div class="container mx-auto mb-8 mt-8">#}
+{#        <div class="overflow-x-auto">#}
+{#            <table class="table-auto w-full mt-8 rounded-lg border border-gray-300">#}
+{#                <thead>#}
+{#                    <tr class="bg-gray-200 text-gray-700">#}
+{#                        <th class="px-4 py-2 text-center">Username</th>#}
+{#                        <th class="px-4 py-2 text-center">Bio</th>#}
+{#                        <th class="px-4 py-2 text-center">Posts</th>#}
+{#                        <th class="px-4 py-2 text-center">Followers</th>#}
+{#                        <th class="px-4 py-2 text-center">Following</th>#}
+{#                    </tr>#}
+{#                </thead>#}
+{#                <tbody>#}
+{#                    {% for profile in profiles %}#}
+{#                        <tr class="bg-white text-gray-800">#}
+{#                            <td class="px-4 py-2 text-center">{{ profile.user.username }}</td>#}
+{#                            <td class="px-4 py-2 text-center">{{ profile.bio | safe }}</td>#}
+{#                            <td class="px-4 py-2 text-center">{{ profile.post_set.count }}</td>#}
+{#                            <td class="px-4 py-2 text-center">{{ profile.followers_count }}</td>#}
+{#                            <td class="px-4 py-2 text-center">{{ profile.following_count }}</td>#}
+{#                        </tr>#}
+{#                    {% endfor %}#}
+{#                </tbody>#}
+{#            </table>#}
+{#        </div>#}
+{#    </div>#}
+{#{% endblock %}#}
+{##}
+{#{% block custom_css %}#}
+{#    <style>#}
+{#        th {#}
+{#            border-bottom: 2px solid rgba(118, 118, 118, 0.31);#}
+{#        }#}
+{#    </style>#}
+{#{% endblock %}#}
+

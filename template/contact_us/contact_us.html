@@ -6,8 +6,7 @@
 
 {% block contact_us %}
 <div class="flex items-center justify-center p-8">
-    <div class="  mx-auto w-full max-w-[850px] ">
-        <form method="POST" class="bg-gradient-to-r  from-gray-300 via-gray-100  shadow-lg rounded-lg overflow-hidden rounded-md shadow-md p-6">
+        <form id="contact-form" method="POST" class="bg-gradient-to-r  from-blue-200 via-blue-100   shadow-lg rounded-lg overflow-hidden rounded-md shadow-md p-6">
             {% csrf_token %}
             <h2 class="text-2xl font-semibold mb-6">Get in Touch</h2>
             <p class="text-gray-600 mb-6">If you have any questions, feedback, or suggestions, feel free to contact us using the form below or via email.</p>
@@ -44,5 +43,57 @@
             </div>
         </form>
     </div>
-</div>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+  $(document).ready(function() {
+    $(".like-btn").click(function(event) {
+      event.preventDefault();
+      var post_id = $(this).data("post-id");
+
+      $.ajax({
+        url: $(this).attr("href"),
+        method: "GET",
+        success: function(data) {
+          if (data.success) {
+            // Update the like count
+            $(".like-count-" + post_id).text(data.likes);
+            // Optionally, update the dislike count as well
+            $(".dislike-count-" + post_id).text(data.dislikes);
+          } else {
+            alert("Failed to process request: " + data.message);
+          }
+        },
+        error: function(xhr, status, error) {
+          console.error(xhr.responseText);
+          alert("An error occurred while processing the request.");
+        }
+      });
+    });
+
+    $(".dislike-btn").click(function(event) {
+      event.preventDefault();
+      var post_id = $(this).data("post-id");
+
+      $.ajax({
+        url: $(this).attr("href"),
+        method: "GET",
+        success: function(data) {
+          if (data.success) {
+            // Update the dislike count
+            $(".dislike-count-" + post_id).text(data.dislikes);
+            // Optionally, update the like count as well
+            $(".like-count-" + post_id).text(data.likes);
+          } else {
+            alert("Failed to process request: " + data.message);
+          }
+        },
+        error: function(xhr, status, error) {
+          console.error(xhr.responseText);
+          alert("An error occurred while processing the request.");
+        }
+      });
+    });
+  });
+</script>
+
 {% endblock %}

@@ -1,15 +1,18 @@
 from datetime import datetime
+
 from django.core.mail import send_mail
 from django.conf import settings
 import pytz
 from django.contrib import messages
 from django.contrib.auth import logout, update_session_auth_hash
 from django.contrib.auth import login
+from django.db.models import Count
+
 from .forms import UserLoginForm, UserPasswordResetForm, UserLoginEmailForm
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.utils import timezone
-from django.views.generic import DetailView, DeleteView
+from django.views.generic import DetailView, DeleteView, ListView
 from core.mixin import HttpsOptionLoginMixin as MustBeLogoutCustomView, \
     HttpsOptionNotLogoutMixin as MustBeLogingCustomView
 from .forms import UserRegistrationForm, VerifyCodeForm, ProfileChangeOrCreationForm, CustomUserChangeForm, \
@@ -603,6 +606,31 @@ class ProfileDetailView(DetailView, MustBeLogingCustomView):
         """
         profile_get_object = Profile.objects.get(user=self.request.user)
         return get_object_or_404(User, pk=self.kwargs['pk']) and profile_get_object
+
+    def get_context_data(self, **kwargs):
+        """
+        Adds counts of followers and following to the context.
+        """
+        context = super().get_context_data(**kwargs)
+        profile = self.get_object()
+        # Aggregate counts of followers and following in a single query
+        profile_counts = Profile.objects.filter(user=profile.user).annotate(
+            num_followers=Count('followers'),
+            num_following=Count('following')
+        ).values('num_followers', 'num_following').first()
+        # Get all followers' usernames
+        # Extract counts from the result
+        followers_usernames = Profile.objects.filter(following=profile.user).values_list('user__username', flat=True)
+        following_usernames = Profile.objects.filter(followers=profile.user).values_list('user__username', flat=True)
+
+        context['followers_usernames'] = followers_usernames
+        context['following_usernames'] = following_usernames
+        context['followers_count'] = profile_counts['num_followers'] if profile_counts else 0
+        context['following_count'] = profile_counts['num_following'] if profile_counts else 0
+
+        return context
+
+
 
 
 class DeleteProfileView(DeleteView, MustBeLogingCustomView):

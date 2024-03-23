@@ -1,0 +1,45 @@
+{% extends 'base/bases.html' %}
+{% block title %}
+    <title>Home</title>
+{% endblock %}
+{% block home %}
+<div class="bg-gradient-to-r from-blue-600 to-pink-500 flex justify-center">
+    <div class="bg-white mt-8 mb-8 rounded-lg p-8 shadow-md  mx-auto w-full max-w-[950px]">
+        <h1 class="text-4xl font-bold text-gray-800 mb-6">Welcome to Tiny Instagram</h1>
+        <p class="text-lg text-gray-600 mb-8">Tiny Instagram is where moments are captured and shared. Dive into a world
+            of creativity, inspiration, and connection.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="p-6 bg-gradient-to-r from-blue-200 to-blue-100 rounded-lg">
+                <h2 class="text-2xl font-semibold text-blue-800 mb-4">Share Your Moments</h2>
+                <p class="text-gray-600">Capture and share your favorite moments with friends and family. Tell your
+                    story through photos and videos.</p>
+            </div>
+            <div class="p-6 bg-gradient-to-r from-yellow-200 to-yellow-100 rounded-lg">
+                <h2 class="text-2xl font-semibold text-yellow-800 mb-4">Discover Amazing Content</h2>
+                <p class="text-gray-600">Explore a diverse range of content from creators worldwide. Find inspiration,
+                    beauty, and creativity at every turn.</p>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="p-6 bg-gradient-to-r from-green-200 to-green-100 rounded-lg">
+                <h2 class="text-2xl font-semibold text-green-800 mb-4">Connect with Others</h2>
+                <p class="text-gray-600">Follow your favorite creators, connect with friends, and build meaningful
+                    relationships within a supportive community.</p>
+            </div>
+            <div class="p-6 bg-gradient-to-r from-pink-200 to-pink-100 rounded-lg">
+                <h2 class="text-2xl font-semibold text-pink-800 mb-4">Get Inspired</h2>
+                <p class="text-gray-600">Discover new perspectives, learn from others, and unleash your creativity. Let
+                    Tiny Instagram spark your imagination.</p>
+            </div>
+        </div>
+        <div class="flex justify-center">
+            <a href="{% url 'register_user' %}"
+               class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-3 px-6 rounded-full mr-4">Sign
+                Up</a>
+
+        </div>
+        <p class="text-gray-600 mt-4 text-center">Already have an account? <a href="{% url "login" %}" class="text-blue-500">Log in
+            here.</a></p>
+    </div>
+</div>
+{% endblock %}

@@ -14,7 +14,8 @@ These URL patterns define the navigation structure of the website, directing use
 
 
 urlpatterns = [
-    path("", TemplateView.as_view(template_name='base/bases.html'), name="home"),
+    path("", TemplateView.as_view(template_name='home/home.html'), name="home"),
     path("about_us/", TemplateView.as_view(template_name='about_us/about_us.html'), name="about_us"),
     path('contact_us/', ContactUsView.as_view(), name='contact_us'),
+    # path('search/', SearchPostView.as_view(), name='search'),
 ]

@@ -1,3 +1,6 @@
+from itertools import zip_longest
+from django.contrib.postgres.search import TrigramSimilarity
+from post.forms import SearchForm
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count
 from django.urls import reverse_lazy
@@ -67,6 +70,7 @@ class Explorer(MustBeLogingCustomView):
         """Initialize the template_explorer, form_class, next_page_show_post, user, posts."""
         self.template_explorer = 'explorer/explorer.html'  # noqa
         self.form_class = CreatCommentForm  # noqa
+        self.form_class_search = SearchForm  # noqa
         self.next_page_explorer = reverse_lazy('explorer', kwargs={'pk': kwargs['pk']})  # noqa
         self.next_page_home = reverse_lazy('home')  # noqa
         # self.next_page_create_profile = reverse_lazy('create_profile')  # noqa
@@ -80,19 +84,40 @@ class Explorer(MustBeLogingCustomView):
         return super().setup(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
+        """This method handles GET requests for the Explorer view.
+           It retrieves the search form data and all posts from the database.
+           If the search form is valid, it performs a trigram similarity search on the Post model
+           based on the title and body fields.
+           It then filters the posts based on the search similarity score and orders them by similarity.
+           Next, it retrieves all active users with their profiles and prepares a list of user posts.
+           Finally,it combines the search results and user posts into a list of tuples and renders the explorer template
+           """
+        form_search = self.form_class_search(request.GET)
+        post_search = Post.objects.all()
+
+        if form_search.is_valid():
+            search_query = form_search.cleaned_data.get('search')
+            post_search = post_search.annotate(
+                similarity=TrigramSimilarity('title', search_query) +
+                           TrigramSimilarity('body', search_query)  # noqa
+            ).filter(similarity__gt=0.1).order_by('-similarity')
+
         users_with_profiles = User.objects.filter(is_active=True).prefetch_related('profile')
         user_posts = []
-        for self.user in users_with_profiles:
-            if hasattr(self.user, 'profile'):
+        for user in users_with_profiles:
+            if hasattr(user, 'profile'):
                 user_posts.append({
-                    'user': self.user,
-                    'posts': Post.objects.filter(owner=self.user.profile, is_deleted=False).annotate(
+                    'user': user,
+                    'posts': post_search.filter(owner=user.profile, is_deleted=False).annotate(
                         num_likes=Count('likes'),
                         num_dislikes=Count('dislikes')
                     )
                 })
+
+        combined_list = list(zip_longest(post_search, user_posts))
+
         return render(request, self.template_explorer,
-                      {'posts': self.posts, 'user_posts': user_posts, 'form': self.form_class()})
+                      {'combined_list': combined_list, 'form': self.form_class(), 'form_search': form_search})
 
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST)
