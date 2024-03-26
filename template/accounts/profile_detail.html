@@ -3,33 +3,6 @@
     <title>Profile - {{ request.user.username }}</title>
 {% endblock %}
 {% block info_account %}
-    <div class="container mx-auto flex justify-center">
-        <div class="flex items-center">
-            <img src="
-                    {% if profile.profile_picture %}{{ profile.profile_picture.url }}{% else %}https://via.placeholder.com/150{% endif %}"
-                 alt="Profile Picture" class="rounded-full w-20 h-20 mr-6">
-            <div>
-                <h1 class="text-2xl font-semibold">{{ request.user.username }}</h1>
-                <p class="text-gray-600">{{ profile.bio | safe }}</p>
-            </div>
-            <div class="grid grid-cols-3 gap-6">
-                <div class="flex flex-col items-center justify-center">
-                    <h2 class="text-lg font-semibold mb-2">Posts</h2>
-                    <p class="text-xl font-semibold">{{ profile.post_set.count }}</p>
-                </div>
-
-                <div class="flex flex-col items-center justify-center p-4">
-                    <h2 class="text-lg font-semibold mb-2">Followers</h2>
-                    <p class="text-xl font-semibold">{{ followers_count }}</p>
-                </div>
-
-                <div class="flex flex-col items-center justify-center p-4">
-                    <h2 class="text-lg font-semibold mb-2">Following</h2>
-                    <p class="text-xl font-semibold">{{ following_count }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
     <div class="container mx-auto mb-8 mt-8">
         <div class="overflow-x-auto">
             <table class="table-auto w-full mt-8 rounded-lg border border-gray-300">
@@ -58,11 +31,11 @@
                 {% endif %}
                 </tbody>
             </table>
-                    <table class="table-auto w-full mt-2 rounded-lg border border-gray-300">
+            <table class="table-auto w-full mt-2 rounded-lg border border-gray-300">
                 <thead>
                 <tr class="bg-gray-200 text-gray-700">
-                    <th class="px-4 py-2 text-center">Followers </th>
-                    <th class="px-4 py-2 text-center">Following </th>
+                    <th class="px-4 py-2 text-center">Followers {{ followers_count }}</th>
+                    <th class="px-4 py-2 text-center">Following {{ following_count }}</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -73,6 +46,7 @@
                 </tbody>
                 <tr class="bg-white text-gray-800">
                     <td class="px-4 py-2 text-center">
+
                         {% for follower_username in followers_usernames %}
                             <div>{{ follower_username }}</div>
                         {% endfor %}
@@ -147,25 +121,6 @@
 {#        }#}
 {#    </style>#}
 {#{% endblock %}#}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 {#{% extends "base/bases.html" %}#}

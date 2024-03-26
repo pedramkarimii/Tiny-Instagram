@@ -25,57 +25,73 @@ Handles OTP (One Time Password) codes for account verification. It stores the OT
 
 The following is a textual representation of the Entity-Relationship Diagram (ERD) illustrating the relationships between the models in Tiny Instagram:
 
+```
+╔════════════════════════════════════════════════════════════════╗
+║                          User Model                            ║
+╠═════════════════════════════╦══════════════════════════════════╣
+║         Attribute           ║           Description            ║
+╠═════════════════════════════╬══════════════════════════════════╣
+║ username: CharField         ║ Username of the user.            ║
+║ email: EmailField           ║ Email address of the user.       ║
+║ phone_number: CharField     ║ Phone number of the user.        ║
+║ create_time: DateTimeField  ║ Time when the user was created.  ║
+║ update_time: DateTimeField  ║ Time when the user was last      ║
+║                             ║ updated.                         ║
+║ is_deleted: BooleanField    ║ Indicates if the user is deleted.║
+║ is_active: BooleanField     ║ Indicates if the user is active. ║
+║ is_admin: BooleanField      ║ Indicates if the user is an      ║
+║                             ║ admin.                           ║
+║ is_staff: BooleanField      ║ Indicates if the user is staff.  ║
+║ is_superuser: BooleanField  ║ Indicates if the user is a       ║
+║                             ║ superuser.                       ║
+╚════════════════════════════════════════════════════════════════╝
 
+╔════════════════════════════════════════════════════╗
+║                    Profile Table                   ║
+╠════════════════════════════════════════════════════╣
+║ id, user_id (FK), full_name, name, last_name,      ║
+║ gender, age, bio, profile_picture, is_deleted,     ║
+║ is_active, create_time (auto_now_add=True,         ║
+║ editable=False), update_time (auto_now=True,       ║
+║ editable=False)                                    ║
+╚════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════╗
+║                     Post Table                       ║
+╠══════════════════════════════════════════════════════╣
+║ id, owner_id (FK), title, body, post_picture,        ║
+║ is_deleted (default=False), is_active (default=True),║
+║ delete_time (auto_now=True, editable=False),         ║
+║ create_time (auto_now_add=True, editable=False),     ║
+║ update_time (auto_now=True, editable=False)          ║
+╚══════════════════════════════════════════════════════╝
 
-    +-------------------+            1           +-------------------+
-    |       User        |------------------------|      Profile      |
-    +-------------------+            1           +-------------------+
-    | id                |<-----------------------| id                |
-    | username          |                        | user_id     FK    |
-    | email             |                        | followers_id      |
-    | phone_number      |                        | following_id      |
-    | create_time       |                        | create_time_follow|
-    | update_time       |                        | full_name         |
-    | is_deleted        |                        | name              |
-    | is_active         |                        | last_name         |
-    | is_admin          |                        | gender            |
-    | is_staff          |                        | age               |
-    | is_superuser      |                        | bio               |
-    +-------------------+                        | profile_picture   |
-                                                 | is_deleted        |
-                                                 | is_active         |
-                                                 | create_time       |
-                                                 | update_time       |
-                                                 +-------------------+
-    +-------------------+
-    |      OptCode      |
-    +-------------------+
-    | id                |
-    | code              |
-    | phone_number      |
-    | email             |
-    | created           |
-    +-------------------+
+╔════════════════════════════════════════════════════╗
+║                    Comment Table                   ║
+╠════════════════════════════════════════════════════╣
+║ id, owner_id (FK), post_id (FK), reply_id (FK),    ║
+║ is_reply, comments, is_deleted (default=False),    ║
+║ delete_time (auto_now=True, editable=False),       ║
+║ create_time (auto_now_add=True, editable=False),   ║
+║ update_time (auto_now=True, editable=False)        ║
+╚════════════════════════════════════════════════════╝
 
+╔════════════════════════════════════════════════════╗
+║                     Vote Table                     ║
+╠════════════════════════════════════════════════════╣
+║ id, user_id (FK), post_id (FK),                    ║
+║ create_time (auto_now_add=True, editable=False)    ║
+╚════════════════════════════════════════════════════╝
+╔═══════════════════════════════════════════════════════════════════════╗
+║                             OptCode Model                             ║
+╠═══════════════════════════════════════════════════════════════════════╣
+║ code: PositiveSmallIntegerField                                       ║
+║ phone_number: CharField (max_length=11, unique=True)                  ║
+║ email: EmailField (max_length=100, unique=True, null=True, blank=True)║
+║ created: DateTimeField (auto_now_add=True)                            ║
+║ is_used: BooleanField (default=False)                                 ║
+╠═══════════════════════════════════════════════════════════════════════╝
 
-
-
-    +-------------------+ 1        * +-------------------+
-    |       Post        |------------|      Comment      |
-    +-------------------+            +-------------------+
-    | id                |            | id                |
-    | owner_id    FK    |            | owner_id    FK    |
-    | body              |            | post_id     FK    |
-    | post_picture      |            | reply_id    FK    |
-    | title             |            | is_reply          |
-    | likes_id    FK    |            | comments          |
-    | dislikes_id FK    |            | is_deleted        |
-    | is_deleted        |            | delete_time       |
-    | is_active         |            | create_time       |
-    | delete_time       |            | update_time       |
-    | create_time       |            +-------------------+
-    | update_time       |
-    +-------------------+
+```
 
 
 ## Project Overview

@@ -1,8 +1,4 @@
 from django.conf import settings
-from django.contrib.postgres.search import TrigramSimilarity
-from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Count
-from django.db.models.functions import Greatest
 from django.core.cache import cache
 from django.core.mail import send_mail
 from django.contrib import messages
@@ -10,36 +6,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import View
 from account.models import User
-from post.models import Post
 from .forms import ContactForm
-
-
-# class SearchPostView(View):
-#     """
-#     View for searching posts.
-#     """
-#
-#     def setup(self, request, *args, **kwargs):
-#         """Set up initial parameters."""
-#         self.form_class = SearchForm  # noqa
-#         self.template_search = 'search/search_results.html'  # noqa
-#         self.user = request.user  # noqa
-#         try:
-#             self.user_profile = self.user.profile
-#         except ObjectDoesNotExist:
-#             self.user_profile = None  # noqa
-#             messages.error(request, "You must have a profile. Please create a profile")
-#         return super().setup(request, *args, **kwargs)
-#
-#     def get(self, request):
-#
-#         posts = Post.objects.all()
-#         form = SearchForm(request.GET)
-#         if form.is_valid():
-#             search_query = form.cleaned_data.get('search')
-#             posts = posts.filter(title__icontains=search_query)
-#
-#         return render(request, self.template_search, {'posts': posts, 'form': form})
 
 
 class ContactUsView(View):

@@ -17,6 +17,10 @@ class ContactForm(forms.Form):
     message = forms.CharField(label='Message', widget=forms.Textarea)
 
     def clean_name(self):
+        """
+        Customizes the cleaning process for the 'name' field.
+        Validates that the name does not contain spaces and meets length requirements.
+        """
         name = self.cleaned_data['name']
         if ' ' in name:
             raise forms.ValidationError("Name cannot contain spaces.")
@@ -27,7 +31,10 @@ class ContactForm(forms.Form):
         return name
 
     def clean_email(self):
-
+        """
+        Customizes the cleaning process for the 'email' field.
+        Validates that the email address matches a specific pattern and does not contain spaces.
+        """
         email = self.cleaned_data['email']
         email_pattern = r'^[a-zA-Z0-9._%+-]+@(?:gmail|yahoo)\.com$'
         if not re.match(email_pattern, email):
@@ -37,6 +44,11 @@ class ContactForm(forms.Form):
         return email
 
     def clean_message(self):
+        """
+        Customizes the cleaning process for the 'message' field.
+        Validates that the message is not empty and meets length requirements.
+        Checks for spam keywords and raises a validation error if found.
+        """
         message = self.cleaned_data['message']
         if message.strip() == '':
             raise forms.ValidationError('Please enter a message.')
@@ -50,6 +62,10 @@ class ContactForm(forms.Form):
         return message
 
     def save(self):
+        """
+        Defines a save method to retrieve cleaned data from the form.
+        Returns the cleaned name, email, and message.
+        """
         name = self.cleaned_data['name']
         email = self.cleaned_data['email']
         message = self.cleaned_data['message']

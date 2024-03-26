@@ -2,65 +2,61 @@ from itertools import zip_longest
 from django.contrib.postgres.search import TrigramSimilarity
 from post.forms import SearchForm
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Count
 from django.urls import reverse_lazy
-from account.models import User, Profile
+from account.models import User, Profile, Relation
 from core.mixin import HttpsOptionNotLogoutMixin as MustBeLogingCustomView
 from post.forms import UpdatePostForm, CreatCommentForm
-from post.models import Post
+from post.models import Post, Comment, Vote
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 
 
 class HomePostView(MustBeLogingCustomView):
     """
-    The HomePostView class handles both GET and POST requests for displaying and creating comments on posts.
-    - The setup method initializes view attributes including the template name,form class,next page URL,user,and posts.
-    - The get method renders the template to display posts along with the comment creation form.
-    - The post method processes form submissions for creating comments on posts.
-      - If the form is valid, it saves the comment and displays a success message.
-      - If the form is invalid, it renders the template again with the form and any validation errors.
+    View for displaying and creating comments on posts.
+
+    Attributes:
+    - template_posts (str): The template for rendering posts.
+    - form_class (CreatCommentForm): The form class for creating comments.
+    - form_class_search (SearchForm): The form class for searching posts.
+    - next_page_show_post (reverse_lazy): The URL pattern for displaying a specific post.
+    - user (User): The current user.
+    - posts (QuerySet): The queryset of posts filtered by the current user and not deleted.
     """
     http_method_names = ['get', 'post']
 
     def setup(self, request, *args, **kwargs):
-        """Initialize the template_posts, form_class, next_page_show_post, user, posts."""
+        """
+        Initializes form classes, template, and queryset of posts.
+        """
         self.template_posts = 'post/posts.html'  # noqa
         self.form_class = CreatCommentForm  # noqa
         self.form_class_search = SearchForm  # noqa
         self.next_page_show_post = reverse_lazy('show_post', kwargs={'pk': kwargs['pk']})  # noqa
         self.user = request.user  # noqa
-        self.posts = Post.objects.filter(owner=self.user.profile, is_deleted=False).annotate(  # noqa
-            num_likes=Count('likes'),
-            num_dislikes=Count('dislikes')
-        )
+        self.posts = Post.objects.filter(owner=self.user.profile, is_deleted=False)  # noqa
+
         return super().setup(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
         """
-        Handle GET requests.
-        - Initialize the search form with the request data.
-        - Get the search query from the request GET parameters.
-        - If a search query exists:
-            - Annotate the posts queryset with a similarity score based on the search query.
-            - Filter the posts queryset based on the similarity score, considering only posts with a similarity greater than 0.1.
-            - Order the filtered posts by similarity score in descending order.
-        - Render the template to display the posts along with the search form.
-        """
+       Handles GET requests, including post searching.
+       """
         form_search = self.form_class_search(request.GET)
         search_query = request.GET.get('search')
         if search_query:
-            self.posts = self.posts.annotate(
+            self.posts = self.posts.annotate(  # noqa
                 similarity=TrigramSimilarity('title', search_query) +
-                           TrigramSimilarity('body', search_query)  # noqa
+                           TrigramSimilarity('body', search_query)
             ).filter(similarity__gt=0.1).order_by('-similarity')
 
         return render(request, self.template_posts,
                       {'posts': self.posts, 'form': self.form_class(), 'form_search': form_search})
 
     def post(self, request, *args, **kwargs):
-        """Handle POST requests.
-        Process form submission for creating a comment."""
+        """
+        Handles POST requests for creating comments.
+        """
         form = self.form_class(request.POST)
         if form.is_valid():
             post_instance = get_object_or_404(Post, pk=kwargs['pk'], owner=self.user.profile)
@@ -89,16 +85,19 @@ class Explorer(MustBeLogingCustomView):
         self.template_explorer = 'explorer/explorer.html'  # noqa
         self.form_class = CreatCommentForm  # noqa
         self.form_class_search = SearchForm  # noqa
-        self.next_page_explorer = reverse_lazy('explorer', kwargs={'pk': kwargs['pk']})  # noqa
+
         self.next_page_home = reverse_lazy('home')  # noqa
-        # self.next_page_create_profile = reverse_lazy('create_profile')  # noqa
         self.user = request.user  # noqa
+
         try:
             self.user_profile = self.user.profile
         except ObjectDoesNotExist:
             self.user_profile = None  # noqa
             messages.error(request, "You must have a profile. Please create a profile")
         self.posts = Post.objects.filter(owner=self.user_profile)  # noqa
+        self.posts_instance = get_object_or_404(Post, pk=kwargs['pk'])  # noqa
+        self.users_instance = get_object_or_404(User, pk=kwargs['pk'])  # noqa
+        self.next_page_explorer = reverse_lazy('explorer', kwargs={'pk': kwargs['pk']})  # noqa
         return super().setup(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
@@ -110,15 +109,16 @@ class Explorer(MustBeLogingCustomView):
            Next, it retrieves all active users with their profiles and prepares a list of user posts.
            Finally,it combines the search results and user posts into a list of tuples and renders the explorer template
            """
+        if not self.user_profile and self.user_profile == None:  # noqa
+            return redirect(self.next_page_home)
         form_search = self.form_class_search(request.GET)
         post_search = Post.objects.all()
 
         if form_search.is_valid():
             search_query = form_search.cleaned_data.get('search')
             post_search = post_search.annotate(
-                similarity=TrigramSimilarity('title', search_query) +
-                           TrigramSimilarity('body', search_query)  # noqa
-            ).filter(similarity__gt=0.1).order_by('-similarity')
+                similarity=TrigramSimilarity('title', search_query) + TrigramSimilarity('body', search_query)).filter(
+                similarity__gt=0.1).order_by('-similarity')
 
         users_with_profiles = User.objects.filter(is_active=True).prefetch_related('profile')
         user_posts = []
@@ -126,18 +126,21 @@ class Explorer(MustBeLogingCustomView):
             if hasattr(user, 'profile'):
                 user_posts.append({
                     'user': user,
-                    'posts': post_search.filter(owner=user.profile, is_deleted=False).annotate(
-                        num_likes=Count('likes'),
-                        num_dislikes=Count('dislikes')
-                    )
+                    'posts': post_search.filter(owner=user.profile, is_deleted=False)
                 })
 
         combined_list = list(zip_longest(post_search, user_posts))
+        posts_comments = self.posts_instance.post_comments.filter(is_reply=True)
 
         return render(request, self.template_explorer,
-                      {'combined_list': combined_list, 'form': self.form_class(), 'form_search': form_search})
+                      {'combined_list': combined_list,
+                       'posts_comments': posts_comments, 'form': self.form_class(),
+                       'form_search': form_search})
 
     def post(self, request, *args, **kwargs):
+        """
+        Handles POST requests for creating comments on posts.
+        """
         form = self.form_class(request.POST)
         if form.is_valid():
             post_instance = get_object_or_404(Post, pk=kwargs['pk'])
@@ -149,6 +152,32 @@ class Explorer(MustBeLogingCustomView):
             return redirect(self.next_page_explorer)
 
         return render(request, self.template_explorer, {'form': form})
+
+
+class ReplyCommentView(MustBeLogingCustomView):
+    """View for replying to a comment."""
+    http_method_names = ['post']
+
+    def post(self, request, *args, **kwargs):  # noqa
+        """Handle POST request for replying to a comment."""
+        form = CreatCommentForm(request.POST)
+        if form.is_valid():
+            parent_comment_id = form.cleaned_data['comment_id']
+            parent_comment = Comment.objects.get(id=parent_comment_id)
+            post_pk = parent_comment.post.pk
+
+            reply_comment = form.save(commit=False)
+            reply_comment.owner = request.user.profile
+            reply_comment.post = parent_comment.post
+            reply_comment.reply = parent_comment
+            reply_comment.is_reply = True
+            reply_comment.save()
+
+            messages.success(request, "You have replied to a comment")
+            return redirect('explorer', pk=post_pk)
+        else:
+            messages.error(request, "Failed to reply to comment")
+            return redirect('home')
 
 
 class CreatePostView(MustBeLogingCustomView):
@@ -179,6 +208,8 @@ class CreatePostView(MustBeLogingCustomView):
         return super().setup(request, *args, **kwargs)
 
     def get(self, request):
+        if not self.user_profile and self.user_profile == None:  # noqa
+            return redirect(self.next_page_home)
         """Render the form for creating a post."""
         return render(request, self.template_create_post, {'form': self.form_class()})
 
@@ -188,6 +219,8 @@ class CreatePostView(MustBeLogingCustomView):
         if form.is_valid():
             post = form.save(commit=False)
             post.owner = Profile.objects.get(user=self.user)
+            print('P' * 20, post.owner)
+
             if 'post_picture' in self.files:
                 post.post_picture = self.files['post_picture']
                 post.save()
@@ -255,124 +288,79 @@ class UpdatePostView(MustBeLogingCustomView):
 
 
 class FollowUserView(MustBeLogingCustomView):
-    """A view to handle following/unfollowing users."""
+    """
+    A view for allowing users to follow or unfollow another user.
+    """
     http_method_names = ['post']
 
     def setup(self, request, *args, **kwargs):
         """
-        Get the profile of the user to be followed/unfollowed,
-        the profile of the logged-in user,
-        the logged-in user, and
-        check if the logged-in user is already following the user profile
-        URL to redirect after following/unfollowing.
+        Initializes necessary attributes for the view.
+        Sets up the user instance to follow/unfollow and defines the next page URL.
         """
-        self.users_profile = get_object_or_404(Profile, pk=kwargs['pk'])  # noqa
-        self.request_user_profile = request.user.profile  # noqa
+        self.users_instance = get_object_or_404(User, pk=kwargs['pk'])  # noqa
         self.user = request.user  # noqa
-        self.request_user_profile_is_follow = request.user.profile.is_follow  # noqa
         self.next_page_explorer = reverse_lazy('explorer', kwargs={'pk': kwargs['pk']})  # noqa
         return super().setup(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        """Handle POST request for following/unfollowing.
-        Retrieve the user profile.
-        Check if the user is not already followed
-        If not followed:
-               - Check if the user is trying to follow themselves.
-               - Check if the user is already following this user.
-               - Update following/follower relationships.
-               - Set appropriate flags and save changes.
-               - Show success message
-               Check if the user is already followed
-               If already followed:
-               - Check if the user is trying to unfollow themselves.
-               - Check if the user is not following this user.
-               - Update following/follower relationships.
-               - Set appropriate flags and save changes.
-               - Show success message.
-               Handle error case."""
-        user_profile = self.users_profile
-        if user_profile.is_follow == False:  # noqa
-            if user_profile == self.request_user_profile:
-                messages.error(request, "You cannot follow yourself.")
-                return redirect(self.next_page_explorer)
-            if request.user.profile.following == user_profile.user:
-                messages.error(request, "You are already following this user.")
-                return redirect(self.next_page_explorer)
-            request.user.profile.following = user_profile.user
-            user_profile.followers = self.user
-            self.request_user_profile_is_follow = True  # noqa
-            self.request_user_profile.save()
-            user_profile.is_follow = True
-            user_profile.save()
-            messages.success(request, f"You are now following {user_profile.full_name}.")
-            return redirect(self.next_page_explorer)
-        elif user_profile.is_follow == True:  # noqa
-            if user_profile == self.request_user_profile:  # noqa
-                messages.error(request, "You cannot unfollow yourself.")
-                return redirect(self.next_page_explorer)
-            if request.user.profile.following != user_profile.user:
-                messages.error(request, "You are not following this user.")
-                return redirect(self.next_page_explorer)
-            request.user.profile.following = None
-            user_profile.followers = None
-            self.request_user_profile_is_follow = False  # noqa
-            self.request_user_profile.save()
-            user_profile.is_follow = False
-            user_profile.save()
-            messages.success(request, f"You have unfollowed {user_profile.full_name}.")
+        """
+        Handles the POST request for following or unfollowing a user.
+
+        Checks if a relation already exists between the users. If it exists, unfollows the user;otherwise,creates a new
+        relation to follow the user.
+        """
+
+        relation = Relation.objects.filter(
+            followers=self.user,
+            following=self.users_instance
+        )
+        if relation.exists():
+            relation.delete()
+            messages.success(request, f"You are unfollow this user {self.users_instance}.")
             return redirect(self.next_page_explorer)
         else:
-
-            messages.error(request, "An error occurred. Please try again.")
+            Relation.objects.create(
+                followers=self.user,
+                following=self.users_instance,
+                is_follow=True
+            )
+            messages.success(request, f"You are now following {self.users_instance} .")
             return redirect(self.next_page_explorer)
 
 
 class PostLikeView(MustBeLogingCustomView):
     """
-    The PostLikeView class handles GET requests for liking/disliking a post.
-    - The setup method initializes the view attributes including the next page URL, user, and post instance.
-    - The get method processes liking/disliking of a post.
-      - If the post is not already liked by the user, it sets the like for the user and removes any existing dislike.
-      - If the post is not already disliked by the user, it sets the dislike for the user and removes any existing like.
-      - Redirects the user to the next page after processing the request.
+    A view for allowing users to like or unlike a post.
     """
     http_method_names = ['get']
 
     def setup(self, request, *args, **kwargs):
-        """Initialize the next_page_explorer_post_id, user, self.post."""
+        """
+        Initializes necessary attributes for the view.
+
+        Sets up the next page URL, user instance, and the post instance.
+        """
         self.next_page_explorer_post_id = reverse_lazy('explorer', kwargs={'pk': kwargs['post_id']})  # noqa
-        self.user = request.user.profile  # noqa
+        self.user = request.user  # noqa
         self.post = get_object_or_404(Post, pk=kwargs['post_id'])  # noqa
         return super().setup(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
-        """Handle GET requests.
-        Process liking/disliking of a post."""
+        """
+        Handles the GET request for liking or unliking a post.
 
-        if not self.post.likes == self.user:
-            """ If the post is not already liked by the user, like the post."""
-            self.post.likes = self.user
-            self.post.save()
-            messages.success(request, "You have liked this post")
-            if self.post.dislikes == self.user:
-                """If the post was previously disliked by the user, remove the dislike."""
-                self.post.dislikes = None
-                self.post.save()
-                messages.success(request, "You have removed your dislike from this post")
+        Checks if the user has already liked the post. If not, creates a new like. If yes, removes the like.
+        """
+        like = Vote.objects.filter(post=self.post, user=self.user)  # noqa
+        if not like.exists():
+            like.create(post=self.post, user=self.user)
+            messages.success(request, f"You have liked this post {self.post.title}")
             return redirect(self.next_page_explorer_post_id)
-
-        if not self.post.dislikes == self.user:
-            """If the post is not already disliked by the user, dislike the post."""
-            self.post.dislikes = self.user  # noqa
-            self.post.save()
-            messages.success(request, "You have disliked this post")
-            if self.post.likes == self.user:
-                """If the post was previously liked by the user, remove the like."""
-                self.post.likes = None
-                self.post.save()
-                messages.success(request, "You have removed your like from this post")
-        return redirect(self.next_page_explorer_post_id)
+        else:
+            like.delete()
+            messages.success(request, f"You have removed your like from this post {self.post.title}")
+            return redirect(self.next_page_explorer_post_id)
 
 
 class DeletePostView(MustBeLogingCustomView):

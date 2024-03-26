@@ -1,5 +1,4 @@
 from ckeditor.fields import RichTextField
-from django.contrib.auth import authenticate
 from django.contrib.auth.forms import ReadOnlyPasswordHashField, PasswordChangeForm, PasswordResetForm
 from django.contrib.auth.hashers import check_password
 from django.core.exceptions import ValidationError
@@ -56,6 +55,12 @@ class UserLoginForm(CleanPassword):
             return phone_number
 
     def clean(self):
+        """
+        Customizes the data cleaning process for the form.
+        Validates the phone number and password combination.
+        Raises a validation error if the phone number or password is invalid.
+        """
+
         cleaned_data = super().clean()
         phone_number = cleaned_data.get('phone_number')
         password = cleaned_data.get('password')
@@ -96,7 +101,13 @@ class UserLoginEmailForm(CleanPassword):
         if user:
             return email
 
-    def clean(self):  # Pedram@1986
+    def clean(self):
+        """
+        Customizes the data cleaning process for the form.
+        Validates the email and password combination.
+        Raises a validation error if the email or password is invalid.
+        """
+
         cleaned_data = super().clean()
         email = cleaned_data.get('email')
         password = cleaned_data.get('password')
@@ -169,13 +180,11 @@ class CleanDataUserForm(forms.ModelForm):
         """
         email = self.cleaned_data['email']
         user = User.objects.filter(email=email).exists()
-
-        # Regex pattern for email validation
         email_pattern = r'^[a-zA-Z0-9._%+-]+@(?:gmail|yahoo)\.com$'
 
         if user:
             raise forms.ValidationError("This email address is already registered.")
-        elif not re.match(email_pattern, email):
+        if not re.match(email_pattern, email):
             raise forms.ValidationError("Please enter a valid gmail or yahoo email address.")
         elif ' ' in email:
             raise forms.ValidationError("Email address cannot contain spaces.")
@@ -191,8 +200,6 @@ class CleanDataUserForm(forms.ModelForm):
         """
         username = self.cleaned_data['username']
         user = User.objects.filter(username=username).exists()
-
-        # Regex pattern for username validation
         username_pattern = r'^[A-Za-z0-9@#_$%^&*()-+=]{4,26}$'
 
         if user:
@@ -210,7 +217,7 @@ class CleanDataUserForm(forms.ModelForm):
             forms.ValidationError: If the phone number is already registered.
         """
 
-        phone_number = self.cleaned_data['phone_number']  # noqa
+        phone_number = self.cleaned_data['phone_number']
         OptCode.objects.filter(phone_number=phone_number).delete()
         pattern = r"09(1[0-9]|3[0-9]|2[0-9]|0[1-9]|9[0-9])[0-9]{7}$"
         if not re.match(pattern, phone_number):
@@ -245,37 +252,6 @@ class CleanDataUserForm(forms.ModelForm):
             raise forms.ValidationError("Password cannot contain spaces.")
 
         return password2
-
-
-# class AdminCreationForm(CleanDataUserForm):
-#     """
-#     This class defines a form for creating admin users, extending the CleanDataUserForm.
-#
-#     Methods:
-#         save: Method to save the created user as an admin user.
-#
-#     Attributes:
-#         Constructor method to initialize form fields.
-#         Method to save the created user as a regular user.
-#     """
-#
-#     def save(self, commit=True):
-#         """
-#         Save the created user as an admin user.
-#
-#         Args:
-#             commit (bool, optional): Indicates whether to save the user to the database. Defaults to True.
-#
-#         Returns:
-#             User: The created user instance.
-#         """
-#         user = super().save(commit=False)
-#         user.is_staff = True
-#         user.is_admin = True
-#         user.is_superuser = False
-#         if commit:
-#             user.save()
-#         return user
 
 
 class UserRegistrationForm(CleanDataUserForm):
@@ -401,29 +377,6 @@ class ChangePasswordForm(PasswordChangeForm):
             return new_password1
         return new_password1
 
-
-# class ChangePasswordForm(PasswordChangeForm):
-#     """
-#     This class defines a form for changing user password, extending the PasswordChangeForm.
-#
-#     Methods:
-#         __init__: Constructor method to customize form field widgets.
-#
-#     """
-#
-#     def __init__(self, *args, **kwargs):
-#         """
-#         Constructor method to customize form field widgets.
-#
-#         Args:
-#             *args: Variable length argument list.
-#             **kwargs: Arbitrary keyword arguments.
-#         """
-#         super().__init__(*args, **kwargs)
-#         for password in ['old_password', 'new_password1', 'new_password2']:
-#             self.fields[password].widget.attrs.update({'class': 'form-control'})
-#
-#
 
 class UserPasswordResetForm(PasswordResetForm):
     """

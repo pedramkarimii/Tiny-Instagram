@@ -1,7 +1,37 @@
 from django.contrib import admin
-from account.models import User, Profile, OptCode
+from account.models import User, Profile, OptCode, Relation
 from .forms import UserChangeForm, ProfileForm
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+
+""" 
+Django admin configuration for managing User, Profile, Relation, and OptCode models.
+Defines custom admin interfaces, inline options, and fieldsets for each model.
+"""
+
+
+@admin.register(Relation)
+class RelationAdmin(admin.ModelAdmin):
+    """
+    Registers the Relation model with the admin site and customizes its admin interface.
+    Defines the list display, filters, search fields, ordering, and row ID fields for Relation objects.
+    """
+
+    model = Relation
+    list_display = ('followers', 'following', 'is_follow', 'create_time_follow')
+    list_filter = ('followers',)
+    search_fields = ('followers',)
+    ordering = ('-create_time_follow',)
+    row_id_fields = ('followers',)
+
+
+class RelationInline(admin.StackedInline):
+    """
+    Defines inline admin options for the Profile model.
+    """
+    model = Relation
+    can_delete = False
+    verbose_name_plural = 'Relation'
+    fk_name = 'followers'
 
 
 class ProfileInline(admin.StackedInline):
@@ -21,7 +51,7 @@ class ProfileAdmin(admin.ModelAdmin):
     Defines admin options for the Profile model.
     """
     model = Profile
-    list_display = ('user', 'full_name', 'gender', 'followers', 'following')
+    list_display = ('user', 'full_name', 'gender', 'is_active')
     list_filter = ('user',)
     search_fields = ('user',)
     ordering = ('-update_time',)
@@ -34,7 +64,6 @@ class UserAdmin(BaseUserAdmin):
     Customizes the User admin interface.
     """
     form = UserChangeForm
-    # add_form = ChangePasswordForm
     model = User
     list_display = ('username', 'email', 'phone_number', 'is_admin', 'is_superuser', 'is_staff', 'is_active')
     list_filter = ('is_admin', 'is_active')
@@ -81,7 +110,7 @@ class UserAdmin(BaseUserAdmin):
             form.base_fields["is_deleted"].disabled = True
         return form
 
-    inlines = (ProfileInline,)
+    inlines = (ProfileInline, RelationInline,)
 
     def get_inline_instances(self, request, obj=None):
         """

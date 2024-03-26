@@ -98,7 +98,6 @@ class HttpsOptionLoginMixin(View):
         """Initialize the next_page_create_profile, get profile, authenticate."""
         self.next_page_home = reverse_lazy('home')  # noqa
         self.template_http_method_not_allowed = 'base/http_method_not_allowed.html'  # noqa
-        self.authenticate_profile = hasattr(request.user, 'profile')  # noqa
         self.authenticate_user = request.user.is_authenticated  # noqa
         return super().setup(request, *args, **kwargs)
 

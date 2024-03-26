@@ -67,6 +67,10 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+"""
+Configures the default database connection to use PostgreSQL.
+Specifies the database name, username, password, host, and port.
+"""
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -78,6 +82,11 @@ DATABASES = {
 
     }
 }
+
+"""
+Configures the default cache backend to use Redis.
+Specifies the location of the Redis server (in this case, localhost on port 6379).
+"""
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
@@ -129,10 +138,10 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
-    'account.authenticate.EmailAuthBackend',
-]
+# AUTHENTICATION_BACKENDS = [
+#     'django.contrib.auth.backends.ModelBackend',
+#     'account.authenticate.EmailAuthBackend',
+# ]
 CKEDITOR_CONFIGS = {
     'default': {
         'toolbar': 'full',
@@ -141,13 +150,16 @@ CKEDITOR_CONFIGS = {
     },
 }
 
-
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # LOG_FILE_PATH = os.path.join(BASE_DIR, 'django_errors.log')
 LOG_FILE_PATH = '/home/pedram/Desktop/project django/core/info.log'
 
-
+"""
+Configures email settings for sending emails via SMTP using Gmail.
+Specifies the SMTP server host, port, username, password, and TLS settings.
+Defines the default sender email address.
+"""
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_HOST_USER = 'pedram.9060@gmail.com'
@@ -156,7 +168,3 @@ EMAIL_HOST_PASSWORD = 'kzkq zrty ryjz stii'
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
 DEFAULT_FROM_EMAIL = 'Tiny Instagram'
-
-
-
-

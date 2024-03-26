@@ -14,15 +14,21 @@ logging.basicConfig(filename=LOG_FILE_PATH, level=logging.INFO, format='%(asctim
 
 
 class LoginRequiredMiddleware:
-    """Middleware class to handle login requirement."""
+    """
+    Defines a middleware class to handle login-required functionality.
+    Logs information about incoming requests and responses.
+    Redirects to the home page with a warning message if an error occurs.
+    """
 
     def __init__(self, get_response):
-        """Initialize the middleware."""
         self.get_response = get_response
 
     def __call__(self, request):
-        """Handle each incoming request."""
-
+        """
+        Overrides the __call__ method to handle incoming requests and responses.
+        Logs information about requests and responses.
+        Redirects to the home page with a warning message if an error occurs.
+        """
         logger.info(f"Request for URL: {request.path}. Method: {request.method}.")
 
         response = self.get_response(request)

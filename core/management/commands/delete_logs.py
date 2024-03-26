@@ -7,7 +7,14 @@ from django.conf import settings
 
 
 class Command(BaseCommand):
-    """A management command to delete log files older than two weeks."""
+    """
+    Defines a management command to delete log files older than two weeks.
+    Retrieves the log file path from settings.
+    Checks if the log file exists and if it's older than two weeks.
+    Deletes the log file if it meets the criteria.
+    Logs messages about file operations and errors.
+    """
+
     help = 'Delete log files older than two weeks'
 
     def handle(self, *args, **options):

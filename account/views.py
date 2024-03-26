@@ -1,25 +1,22 @@
 from datetime import datetime
-
 from django.core.mail import send_mail
 from django.conf import settings
 import pytz
 from django.contrib import messages
 from django.contrib.auth import logout, update_session_auth_hash
 from django.contrib.auth import login
-from django.db.models import Count
-
 from .forms import UserLoginForm, UserPasswordResetForm, UserLoginEmailForm
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.utils import timezone
-from django.views.generic import DetailView, DeleteView, ListView
+from django.views.generic import DetailView, DeleteView
 from core.mixin import HttpsOptionLoginMixin as MustBeLogoutCustomView, \
     HttpsOptionNotLogoutMixin as MustBeLogingCustomView
 from .forms import UserRegistrationForm, VerifyCodeForm, ProfileChangeOrCreationForm, CustomUserChangeForm, \
     ChangePasswordForm
 import random
 from account.utils import send_otp_code
-from .models import OptCode, User, Profile
+from .models import OptCode, User, Profile, Relation
 from django.contrib.auth.views import LoginView, PasswordResetView, PasswordResetDoneView, PasswordResetConfirmView, \
     PasswordResetCompleteView
 
@@ -196,10 +193,11 @@ class LoginVerifyCodeView(MustBeLogoutCustomView):
             cd = form.cleaned_data  # noqa
             death_time = code_instance.created + timezone.timedelta(minutes=2)
             if cd['code'] == code_instance.code and death_time > datetime.now(tz=pytz.timezone('Asia/Tehran')):
-                if code_instance:
+                if code_instance and code_instance.is_used == False:  # noqa
                     user = User.objects.get(phone_number=code_instance.phone_number)
                     login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                     code_instance.delete()
+                    code_instance.is_used = True
                     messages.success(request, 'Code verified successfully', extra_tags='success')
                     return redirect(self.next_page_success_login)
             elif death_time < datetime.now(tz=pytz.timezone('Asia/Tehran')):
@@ -242,8 +240,8 @@ class UserRegisterView(MustBeLogoutCustomView):
         form = self.form_class(request.POST)
         if form.is_valid():
             random_code = random.randint(1000, 9999)
-            send_otp_code(form.cleaned_data['phone_number'], random_code)
             OptCode.objects.create(phone_number=form.cleaned_data['phone_number'], code=random_code)
+            send_otp_code(form.cleaned_data['phone_number'], random_code)
             request.session['user_registration_info'] = {
                 'phone_number': form.cleaned_data['phone_number'],
                 'email': form.cleaned_data['email'],
@@ -292,18 +290,21 @@ class UserRegistrationVerifyCodeView(MustBeLogoutCustomView):
             death_time = code_instance.created + timezone.timedelta(minutes=2)
 
             if cd['code'] == code_instance.code and death_time > datetime.now(tz=pytz.timezone('Asia/Tehran')):
-                User.objects.create_user(
-                    phone_number=user_session['phone_number'],
-                    email=user_session['email'],
-                    username=user_session['username'],
-                    password=user_session['password'],
-                )
+                if code_instance.is_used == False:  # noqa
+                    User.objects.create_user(
+                        phone_number=user_session['phone_number'],
+                        email=user_session['email'],
+                        username=user_session['username'],
+                        password=user_session['password'],
+                    )
 
                 code_instance.delete()
+                code_instance.is_used = True
                 messages.success(request, 'User created successfully', extra_tags='success')
                 return redirect(self.next_page_home)
             elif death_time < datetime.now(tz=pytz.timezone('Asia/Tehran')):
                 messages.error(request, 'Code is expired', extra_tags='error')
+                code_instance.delete()
                 return redirect(self.next_page_login_verify_code)
         else:
             messages.error(request, 'Code is not valid', extra_tags='error')
@@ -341,6 +342,15 @@ class ChangePasswordView(MustBeLogingCustomView):
 
 
 class UserLoginEmailView(MustBeLogoutCustomView):
+    """
+    Defines a view for user login via email.
+    Handles GET and POST requests.
+    Sets up necessary attributes such as form_class, URLs, and templates.
+    Includes a method to send OTP email and create OptCode instance.
+    Handles form submission and OTP email sending logic.
+    Displays appropriate messages based on email verification status.
+    """
+
     http_method_names = ['get', 'post']
 
     def setup(self, request, *args, **kwargs):
@@ -390,6 +400,14 @@ class UserLoginEmailView(MustBeLogoutCustomView):
 
 
 class LoginVerifyCodeEmailView(MustBeLogoutCustomView):
+    """
+    Defines a view for verifying login codes sent via email.
+    Handles GET and POST requests.
+    Sets up necessary attributes such as form_class, URLs, and templates.
+    Handles form submission and code verification logic.
+    Displays appropriate messages based on verification status.
+    """
+
     http_method_names = ['get', 'post']
 
     def setup(self, request, *args, **kwargs):
@@ -418,14 +436,19 @@ class LoginVerifyCodeEmailView(MustBeLogoutCustomView):
             cd = form.cleaned_data  # noqa
             death_time = code_instance.created + timezone.timedelta(minutes=2)
             if cd['code'] == code_instance.code and death_time > datetime.now(tz=pytz.timezone('Asia/Tehran')):
-                if code_instance:
+                if code_instance and code_instance.is_used == False:  # noqa
                     user = User.objects.get(email=code_instance.email)
                     login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+                    code_instance.is_used = True
                     code_instance.delete()
                     messages.success(request, 'Code verified successfully', extra_tags='success')
                     return redirect(self.next_page_success_login)
+                else:
+                    messages.error(request, 'Code is already used', extra_tags='error')
+                    return redirect(self.next_page_login_email)
             elif death_time < datetime.now(tz=pytz.timezone('Asia/Tehran')):
                 messages.error(request, 'Code is expired', extra_tags='error')
+                code_instance.delete()
                 return redirect(self.next_page_login_email)
         else:
             messages.error(request, 'Code is not aAA valid', extra_tags='error')
@@ -586,14 +609,19 @@ class CreateProfileView(MustBeLogingCustomView):
 
 class ProfileDetailView(DetailView, MustBeLogingCustomView):
     """
-    Displays user profile details.
+    Defines a view for displaying user profile details.
+    Requires user login for access.
+    Handles GET requests only.
+    Sets up necessary attributes such as model, context object name, and template.
+    Defines a method to retrieve the profile object associated with the logged-in user.
+    Overrides the get_context_data method to include additional context data such as follower and following counts.
     """
 
     http_method_names = ['get']
 
     def setup(self, request, *args, **kwargs):
         """
-        Initialize the model, context object_name, template name.
+        Sets up the view by defining the model, context object name, and template name.
         """
         self.model = Profile  # noqa
         self.context_object_name = 'profile'  # noqa
@@ -602,35 +630,36 @@ class ProfileDetailView(DetailView, MustBeLogingCustomView):
 
     def get_object(self, queryset=None):
         """
-        Retrieves the profile object for the currently logged-in user.
+        Overrides the get_object method to retrieve the profile object associated with the logged-in user.
         """
+
         profile_get_object = Profile.objects.get(user=self.request.user)
         return get_object_or_404(User, pk=self.kwargs['pk']) and profile_get_object
 
     def get_context_data(self, **kwargs):
         """
-        Adds counts of followers and following to the context.
+        Overrides the get_context_data method to add additional context data.
+        Retrieves follower and following counts for the profile user.
+        Retrieves lists of follower and following usernames.
+        Adds the counts and usernames to the context.
         """
+
         context = super().get_context_data(**kwargs)
         profile = self.get_object()
-        # Aggregate counts of followers and following in a single query
-        profile_counts = Profile.objects.filter(user=profile.user).annotate(
-            num_followers=Count('followers'),
-            num_following=Count('following')
-        ).values('num_followers', 'num_following').first()
-        # Get all followers' usernames
-        # Extract counts from the result
-        followers_usernames = Profile.objects.filter(following=profile.user).values_list('user__username', flat=True)
-        following_usernames = Profile.objects.filter(followers=profile.user).values_list('user__username', flat=True)
 
+        followers_count = Relation.objects.filter(following=profile.user).count()
+        following_count = Relation.objects.filter(followers=profile.user).count()
+        context['followers_count'] = followers_count
+        context['following_count'] = following_count
+
+        followers_usernames = Relation.objects.filter(following=profile.user).values_list('followers__username',
+                                                                                          flat=True)
+        following_usernames = Relation.objects.filter(followers=profile.user).values_list('following__username',
+                                                                                          flat=True)
         context['followers_usernames'] = followers_usernames
         context['following_usernames'] = following_usernames
-        context['followers_count'] = profile_counts['num_followers'] if profile_counts else 0
-        context['following_count'] = profile_counts['num_following'] if profile_counts else 0
 
         return context
-
-
 
 
 class DeleteProfileView(DeleteView, MustBeLogingCustomView):

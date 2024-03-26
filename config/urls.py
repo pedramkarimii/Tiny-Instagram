@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf.urls.static import static
 from django.conf import settings
+
 """
 Defines URL patterns for the entire Django project.
 - The 'admin/' URL pattern is associated with the Django admin interface.
@@ -17,6 +18,10 @@ urlpatterns = [
     path("", include("core.urls")),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+"""
+Customizes the Django admin site header, title, and index title.
+"""
 admin.site.site_header = 'Social Media'
 admin.site.site_title = 'Social Media Administration'
 admin.site.index_title = 'Welcome To Social Media Administration'

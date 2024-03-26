@@ -5,6 +5,10 @@ import pytz
 
 
 class Command(BaseCommand):
+    """
+    Defines a management command to delete all expired OTP codes.
+    Deletes OTP codes that were created more than 2 minutes ago.
+    """
     help = "Delete all expired OTP code"
 
     def handle(self, *args, **options):

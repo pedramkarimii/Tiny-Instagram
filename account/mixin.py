@@ -1,40 +1,37 @@
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from account.managers import UserManager
 from django.db import models
-
 from core.mixin import DeleteManagerMixin
 
 
 class BaseModelUserMixin(AbstractBaseUser, PermissionsMixin):
     """
-    Mixin class for user models.
-
-    This class provides common fields and methods for user models. It is intended to be used
-    as a mixin with other user models to avoid code duplication.
+    This is a mixin class intended to be used with Django models to provide basic user-related fields and
+        functionalities. It extends Django's AbstractBaseUser and PermissionsMixin classes.
 
     Attributes:
-        create_time (DateTimeField): The timestamp indicating the creation time of the user record.
-        update_time (DateTimeField): The timestamp indicating the last update time of the user record.
-        is_deleted (BooleanField): Flag indicating whether the user has been deleted or not.
-        is_active (BooleanField): Flag indicating whether the user is active or not.
-        is_admin (BooleanField): Flag indicating whether the user has admin privileges.
-        is_staff (BooleanField): Flag indicating whether the user is staff or not.
-        is_superuser (BooleanField): Flag indicating whether the user is a superuser or not.
-        USERNAME_FIELD (str): Field used for authentication, in this case, the phone number.
-        REQUIRED_FIELDS (list): List of fields required for creating a user, in this case, email and full name.
-        objects (UserManager): Custom manager for handling user queries.
+    - create_time: A DateTimeField that stores the creation time of the user instance.
+    - update_time: A DateTimeField that stores the last update time of the user instance.
+    - is_deleted: A BooleanField indicating whether the user instance is marked as deleted.
+    - is_active: A BooleanField indicating whether the user instance is active.
+    - is_admin: A BooleanField indicating whether the user instance has admin privileges.
+    - is_staff: A BooleanField indicating whether the user instance is staff.
+    - is_superuser: A BooleanField indicating whether the user instance is a superuser.
+    - USERNAME_FIELD: Specifies the field used as the unique identifier for authentication (in this case,
+        'phone_number').
+    - REQUIRED_FIELDS: Specifies the fields required when creating a user instance.
+    - objects: The manager for querying user instances.
+    - soft_delete: An instance of DeleteManagerMixin for soft deletion functionality.
 
     Meta:
-        abstract (bool): Indicates that this is an abstract base class and not a concrete model.
-        ordering (tuple): Specifies the default ordering of user records by update time and active status.
-        verbose_name (str): Singular name for the model used in the admin interface.
-        verbose_name_plural (str): Plural name for the model used in the admin interface.
-
-    Methods:
-        has_perm: Method to check if the user has a specific permission.
-        has_module_perms: Method to check if the user has permissions for a specific module.
+    - abstract: Indicates that this model is intended to be used as a base class only and should not be directly
+        instantiated.
+    - ordering: Specifies the default ordering of user instances in queries.
+    - verbose_name: Specifies a human-readable name for the model in singular form.
+    - verbose_name_plural: Specifies a human-readable name for the model in plural form.
+    - constraints: Defines constraints on fields, such as uniqueness constraints on 'username' and 'email'.
+    - indexes: Defines indexes for optimizing database queries.
     """
-
     create_time = models.DateTimeField(auto_now_add=True, editable=False)
     update_time = models.DateTimeField(auto_now=True, editable=False)
     is_deleted = models.BooleanField(default=False)
@@ -53,7 +50,7 @@ class BaseModelUserMixin(AbstractBaseUser, PermissionsMixin):
         verbose_name = 'user'
         verbose_name_plural = 'users'
         constraints = [
-            models.UniqueConstraint(fields=['username', 'email'], name='unique_username')
+            models.UniqueConstraint(fields=['username', 'email'], name='unique_username_email')
         ]
         indexes = [
             models.Index(fields=['username', 'email'], name='index_username_email')
