@@ -3,38 +3,6 @@ from core.mixin import DeleteManagerMixin
 from .mixin import BaseModelUserMixin
 from ckeditor.fields import RichTextField
 
-"""
-          +-------------------+            1           +-------------------+
-          |       User        |------------------------|      Profile      |
-          +-------------------+            1           +-------------------+
-          | id                |<-----------------------| id                |
-          | username          |                        | user_id     FK    |
-          | email             |                        | followers_id      |
-          | phone_number      |                        | following_id      |
-          | create_time       |                        | create_time_follow|
-          | update_time       |                        | full_name         |
-          | is_deleted        |                        | name              |
-          | is_active         |                        | last_name         |
-          | is_admin          |                        | gender            |
-          | is_staff          |                        | age               |
-          | is_superuser      |                        | bio               |
-          +-------------------+                        | profile_picture   |
-                                                       | is_deleted        |
-                                                       | is_active         |
-                                                       | create_time       |
-                                                       | update_time       |
-                                                       +-------------------+
-          +-------------------+
-          |      OptCode      |
-          +-------------------+
-          | id                |
-          | code              |
-          | phone_number      |
-          | created           |
-          +-------------------+
-
-"""
-
 
 class User(BaseModelUserMixin):
     """

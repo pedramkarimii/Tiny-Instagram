@@ -3,6 +3,7 @@
     <title>Post</title>
 {% endblock %}
 {% block post %}
+    {% if request.user.is_authenticated %}
     <div class="hidden lg:block">
         <form method="get" class="relative flex rounded-full ml-8 ">
 
@@ -41,7 +42,6 @@
                                 </h2>
                                 <p class="text-sm text-gray-600">{{ user.profile.bio | safe }}</p>
                             </div>
-
                         </div>
                     </div>
                 </div>
@@ -109,42 +109,81 @@
 
                 </div>
                 <hr>
-                <div class="comments-container">
-                    {% for comment in post.comment_set.all %}
-                        <div class="comment-item border-t border-gray-200">
-                            <div class="comment-meta px-6 py-4 flex justify-between items-center">
+                 <div class="comments-container mt-2">
+                    {% for comment in post.post_comments.all %}
+                        {% if comment.is_reply == False %}
+                            <div class="comment-item border-t border-gray-400">
+                            <div class="comment-body px-6 py-4">
                                 <p class="text-gray-800">
-                                    <span class="comment-owner"> @{{ comment.owner }}</span></p>
+                                    <span class="comment-time">@{{ comment.owner }}</span>
+                                </p>
                                 <p class="text-gray-800">
-
-                                    <span class="comment-time">{{ comment.create_time | timesince }}</span>
+                                    <span class="comment-time">{{ comment.comments | safe }}</span>
                                 </p>
                             </div>
                             <div class="comment-body px-6 py-4">
-                                <p class="text-gray-800">{{ comment.comments | safe }}</p>
+                                <p class="text-gray-800">
+                                    <span class="comment-time">{{ comment.create_time | timesince }}</span>
+                                </p>
+                            </div>
+                        {% endif %}
+                    {% for reply in comment.reply_comments.all %}
+                        <p class="text-gray-800 ">
+                            <span class="comment-owner"> </span></p>
+{#                        <div class="comment-meta px-6 py-4 flex justify-between items-center">#}
+                        <div class="comment-body px-6 py-4 ">
+                            <hr/>
+                            <div
+                                    class="comment-body px-6 py-4">
+                                <p class="text-gray-800">
+                                    @{{ reply.owner }}  </p>
+                            </div>
+
+                            <div class="comment-body px-6 py-4">
+                                <p class="text-gray-800">
+                                {{ reply.comments | safe }}
+                                </p>
+                            </div>
+
+                            <div class="comment-body px-6 py-4">
+                                <p class="text-gray-800">
+                                    {{ reply.create_time | timesince }}
+                                 </p>
                             </div>
                         </div>
-                    {% empty %}
-                        <p class="mt-4 ml-4 text-gray-800">No comment yet!</p>
                     {% endfor %}
-                    <div class=" ml-4 mb-2 comment-item border-t border-gray-200">
-                        <form method="post" action="{% url 'show_post'  post.id %}">
-                            {% csrf_token %}
-                            <p class=" mt-4 mb-4">Create Comment{{ form.comments }}</p>
 
-                            <p class="mt-4">Reply {{ form.is_reply }} </p>
-                            <p class="mt-2">{{ form.reply }}</p>
-                            {#                            <a href="{% url 'explorer' post.id %}">#}
+                    {% empty %}
+                    <p class="mt-4 ml-4 text-gray-800">No comment yet!</p>
+                    </div>
+                    {% endfor %}
+
+                </div>
+                <div class=" ml-4 mb-2 comment-item border-t border-gray-400">
+
+                    <form method="post" action="{% url 'post_detail'  post.id %}">
+                        {% csrf_token %}
+                        <p class=" mt-4 mb-4">Create Comment{{ form.comments }}</p>
+                        <div>
+                            <label for="id_is_reply"></label><br>
+                            <input type="checkbox" name="is_reply" id="id_is_reply"
+                                   {% if form.is_reply.value %}checked{% endif %}>
+                        </div>
+
+                        <p class="mt-2">{{ form.reply }}</p>
+                        <a href="{% url 'post_detail' post.id %}">
                             <button class="text-gray-800 font-semibold ml-56 mb-4 mt-4  mr-4 flex items-center">
                                 <span>Send Comment</span>
                                 <span class="text-sm pl-2"></span>
                             </button>
-                        </form>
+                        </a>
+
+                    </form>
                     </div>
                 </div>
             </div>
-        </div>
     {% endfor %}
+    {% endif %}
 {% endblock %}
 
 

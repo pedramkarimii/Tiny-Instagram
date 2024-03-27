@@ -64,7 +64,7 @@ class ContactUsView(View):
 
             if self.authenticate_user:
                 # Send email
-                self.user = User.objects.get(email=form.cleaned_data['email'])  # noqa
+                self.user = User.objects.filter(email=form.cleaned_data['email'])
                 if self.user:
                     subject = 'New message from Tiny Instagram'
                     message = 'You have received a new message.\n\nName: {}\nEmail: {}\nMessage: {}'.format(
@@ -79,7 +79,7 @@ class ContactUsView(View):
                     form.save()
                     return redirect(self.next_page_contact_us)
                 else:
-                    messages.error(request, 'Please enter a valid gmail or yahoo email address')
+                    messages.error(request, 'Please enter your email address')
                     return redirect(self.next_page_contact_us)
             else:
                 try:

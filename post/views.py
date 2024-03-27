@@ -1,12 +1,12 @@
-from itertools import zip_longest
 from django.contrib.postgres.search import TrigramSimilarity
+from django.views.generic import DetailView
 from post.forms import SearchForm
 from django.core.exceptions import ObjectDoesNotExist
 from django.urls import reverse_lazy
 from account.models import User, Profile, Relation
 from core.mixin import HttpsOptionNotLogoutMixin as MustBeLogingCustomView
 from post.forms import UpdatePostForm, CreatCommentForm
-from post.models import Post, Comment, Vote
+from post.models import Post, Vote
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 
@@ -26,6 +26,7 @@ class HomePostView(MustBeLogingCustomView):
     http_method_names = ['get', 'post']
 
     def setup(self, request, *args, **kwargs):
+        print(kwargs)
         """
         Initializes form classes, template, and queryset of posts.
         """
@@ -81,23 +82,12 @@ class Explorer(MustBeLogingCustomView):
     http_method_names = ['get', 'post']
 
     def setup(self, request, *args, **kwargs):
-        """Initialize the template_explorer, form_class, next_page_show_post, user, posts."""
+        """Initialize the template_explorer, form_class_search, next_page_home, next_page_explorer, posts."""
         self.template_explorer = 'explorer/explorer.html'  # noqa
-        self.form_class = CreatCommentForm  # noqa
         self.form_class_search = SearchForm  # noqa
-
         self.next_page_home = reverse_lazy('home')  # noqa
-        self.user = request.user  # noqa
-
-        try:
-            self.user_profile = self.user.profile
-        except ObjectDoesNotExist:
-            self.user_profile = None  # noqa
-            messages.error(request, "You must have a profile. Please create a profile")
-        self.posts = Post.objects.filter(owner=self.user_profile)  # noqa
-        self.posts_instance = get_object_or_404(Post, pk=kwargs['pk'])  # noqa
-        self.users_instance = get_object_or_404(User, pk=kwargs['pk'])  # noqa
-        self.next_page_explorer = reverse_lazy('explorer', kwargs={'pk': kwargs['pk']})  # noqa
+        self.posts = Post.objects.filter(owner=request.user.profile)  # noqa
+        self.next_page_explorer = reverse_lazy('explorer')  # noqa
         return super().setup(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
@@ -109,8 +99,6 @@ class Explorer(MustBeLogingCustomView):
            Next, it retrieves all active users with their profiles and prepares a list of user posts.
            Finally,it combines the search results and user posts into a list of tuples and renders the explorer template
            """
-        if not self.user_profile and self.user_profile == None:  # noqa
-            return redirect(self.next_page_home)
         form_search = self.form_class_search(request.GET)
         post_search = Post.objects.all()
 
@@ -119,65 +107,52 @@ class Explorer(MustBeLogingCustomView):
             post_search = post_search.annotate(
                 similarity=TrigramSimilarity('title', search_query) + TrigramSimilarity('body', search_query)).filter(
                 similarity__gt=0.1).order_by('-similarity')
-
-        users_with_profiles = User.objects.filter(is_active=True).prefetch_related('profile')
-        user_posts = []
-        for user in users_with_profiles:
-            if hasattr(user, 'profile'):
-                user_posts.append({
-                    'user': user,
-                    'posts': post_search.filter(owner=user.profile, is_deleted=False)
-                })
-
-        combined_list = list(zip_longest(post_search, user_posts))
-        posts_comments = self.posts_instance.post_comments.filter(is_reply=True)
-
         return render(request, self.template_explorer,
-                      {'combined_list': combined_list,
-                       'posts_comments': posts_comments, 'form': self.form_class(),
+                      {'post_search': post_search,
                        'form_search': form_search})
+
+
+class PostDetailView(MustBeLogingCustomView, DetailView):
+    """
+    View for displaying detailed information about a single post.
+    """
+
+    http_method_names = ['get', 'post']
+    model = Post
+    template_name = 'post/post_detail.html'
+    context_object_name = 'post'
+
+    def get_object(self, queryset=None):
+        """
+        Returns the post object for the detail view.
+        """
+        return get_object_or_404(Post, pk=self.kwargs.get('pk'))
+
+    def get_context_data(self, **kwargs):
+        """
+        Adds the comment form to the context data.
+        """
+        context = super().get_context_data(**kwargs)
+        context['form'] = CreatCommentForm()
+        return context
 
     def post(self, request, *args, **kwargs):
         """
-        Handles POST requests for creating comments on posts.
+        Handles the submission of the comment form.
         """
-        form = self.form_class(request.POST)
-        if form.is_valid():
-            post_instance = get_object_or_404(Post, pk=kwargs['pk'])
-            comment = form.save(commit=False)
-            comment.owner = self.user.profile
-            comment.post = post_instance
-            comment.save()
-            messages.success(request, "You have created a new comment")
-            return redirect(self.next_page_explorer)
+        post = self.get_object()
 
-        return render(request, self.template_explorer, {'form': form})
-
-
-class ReplyCommentView(MustBeLogingCustomView):
-    """View for replying to a comment."""
-    http_method_names = ['post']
-
-    def post(self, request, *args, **kwargs):  # noqa
-        """Handle POST request for replying to a comment."""
         form = CreatCommentForm(request.POST)
         if form.is_valid():
-            parent_comment_id = form.cleaned_data['comment_id']
-            parent_comment = Comment.objects.get(id=parent_comment_id)
-            post_pk = parent_comment.post.pk
-
-            reply_comment = form.save(commit=False)
-            reply_comment.owner = request.user.profile
-            reply_comment.post = parent_comment.post
-            reply_comment.reply = parent_comment
-            reply_comment.is_reply = True
-            reply_comment.save()
-
-            messages.success(request, "You have replied to a comment")
-            return redirect('explorer', pk=post_pk)
+            comment = form.save(commit=False)
+            comment.owner = request.user.profile
+            comment.post = post
+            comment.save()
+            return redirect(reverse_lazy('post_detail',
+                                         kwargs={
+                                             'pk': post.pk}))
         else:
-            messages.error(request, "Failed to reply to comment")
-            return redirect('home')
+            return self.render_to_response(self.get_context_data(form=form))
 
 
 class CreatePostView(MustBeLogingCustomView):
@@ -300,7 +275,7 @@ class FollowUserView(MustBeLogingCustomView):
         """
         self.users_instance = get_object_or_404(User, pk=kwargs['pk'])  # noqa
         self.user = request.user  # noqa
-        self.next_page_explorer = reverse_lazy('explorer', kwargs={'pk': kwargs['pk']})  # noqa
+        self.next_page_explorer = reverse_lazy('post_detail', kwargs={'pk': kwargs['pk']})  # noqa
         return super().setup(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
@@ -319,13 +294,15 @@ class FollowUserView(MustBeLogingCustomView):
             relation.delete()
             messages.success(request, f"You are unfollow this user {self.users_instance}.")
             return redirect(self.next_page_explorer)
-        else:
+        elif not relation.exists():
             Relation.objects.create(
                 followers=self.user,
                 following=self.users_instance,
-                is_follow=True
             )
             messages.success(request, f"You are now following {self.users_instance} .")
+            return redirect(self.next_page_explorer)
+        else:
+            messages.error(request, "Failed to follow user")
             return redirect(self.next_page_explorer)
 
 
@@ -341,7 +318,7 @@ class PostLikeView(MustBeLogingCustomView):
 
         Sets up the next page URL, user instance, and the post instance.
         """
-        self.next_page_explorer_post_id = reverse_lazy('explorer', kwargs={'pk': kwargs['post_id']})  # noqa
+        self.next_page_explorer_post_id = reverse_lazy('post_detail', kwargs={'pk': kwargs['post_id']})  # noqa
         self.user = request.user  # noqa
         self.post = get_object_or_404(Post, pk=kwargs['post_id'])  # noqa
         return super().setup(request, *args, **kwargs)

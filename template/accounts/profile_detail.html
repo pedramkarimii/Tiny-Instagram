@@ -36,6 +36,7 @@
                 <tr class="bg-gray-200 text-gray-700">
                     <th class="px-4 py-2 text-center">Followers {{ followers_count }}</th>
                     <th class="px-4 py-2 text-center">Following {{ following_count }}</th>
+                    <th class="px-4 py-2 text-center">Posts</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -56,6 +57,7 @@
                             <div>{{ following_username }}</div>
                         {% endfor %}
                     </td>
+                <td class="px-4 py-2 text-center"> {{ profile.post_count }} </td>
                 </tr>
 
             </table>

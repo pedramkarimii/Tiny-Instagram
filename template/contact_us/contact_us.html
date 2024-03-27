@@ -1,99 +1,50 @@
 {% extends "base/bases.html" %}
 
 {% block title %}
-<title>Contact Us</title>
+    <title>Contact Us</title>
 {% endblock %}
 
 {% block contact_us %}
-<div class="flex items-center justify-center p-8">
-        <form id="contact-form" method="POST" class="bg-gradient-to-r  from-blue-200 via-blue-100   shadow-lg rounded-lg overflow-hidden rounded-md shadow-md p-6">
+    <div class="flex items-center justify-center p-8">
+        <form id="contact-form" method="POST"
+              class="bg-gradient-to-r  from-blue-200 via-blue-100   shadow-lg rounded-lg overflow-hidden rounded-md shadow-md p-6">
             {% csrf_token %}
             <h2 class="text-2xl font-semibold mb-6">Get in Touch</h2>
-            <p class="text-gray-600 mb-6">If you have any questions, feedback, or suggestions, feel free to contact us using the form below or via email.</p>
+            <p class="text-gray-600 mb-6">If you have any questions, feedback, or suggestions, feel free to contact us
+                using the form below or via email.</p>
 
             <div class="mb-6">
                 <label for="name" class="block text-base font-medium text-gray-700 mb-2">Full Name</label>
                 <input type="text" name="name" id="name" placeholder="Full Name"
-                    class="w-full rounded-md border border-gray-300 bg-white py-3 px-4 text-base text-gray-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" />
+                       class="w-full rounded-md border border-gray-300 bg-white py-3 px-4 text-base text-gray-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"/>
             </div>
 
             <div class="mb-6">
                 <label for="email" class="block text-base font-medium text-gray-700 mb-2">Email Address</label>
                 <input type="email" name="email" id="email" placeholder="example@domain.com"
-                    class="w-full rounded-md border border-gray-300 bg-white py-3 px-4 text-base text-gray-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" />
+                       class="w-full rounded-md border border-gray-300 bg-white py-3 px-4 text-base text-gray-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"/>
             </div>
 
             <div class="mb-6">
                 <label for="subject" class="block text-base font-medium text-gray-700 mb-2">Subject</label>
                 <input type="text" name="subject" id="subject" placeholder="Enter your subject"
-                    class="w-full rounded-md border border-gray-300 bg-white py-3 px-4 text-base text-gray-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" />
+                       class="w-full rounded-md border border-gray-300 bg-white py-3 px-4 text-base text-gray-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"/>
             </div>
 
             <div class="mb-6">
                 <label for="message" class="block text-base font-medium text-gray-700 mb-2">Message</label>
                 <textarea rows="4" name="message" id="message" placeholder="Type your message"
-                    class="w-full resize-none rounded-md border border-gray-300 bg-white py-3 px-4 text-base text-gray-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"></textarea>
+                          class="w-full resize-none rounded-md border border-gray-300 bg-white py-3 px-4 text-base text-gray-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"></textarea>
             </div>
 
             <div class="text-center">
                 <button type="submit"
-                    class="w-full mt-4 py-2 px-24 bg-opacity-60 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-800 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        class="w-full mt-4 py-2 px-24 bg-opacity-60 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-800 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     Submit
                 </button>
             </div>
         </form>
     </div>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-<script>
-  $(document).ready(function() {
-    $(".like-btn").click(function(event) {
-      event.preventDefault();
-      var post_id = $(this).data("post-id");
 
-      $.ajax({
-        url: $(this).attr("href"),
-        method: "GET",
-        success: function(data) {
-          if (data.success) {
-            // Update the like count
-            $(".like-count-" + post_id).text(data.likes);
-            // Optionally, update the dislike count as well
-            $(".dislike-count-" + post_id).text(data.dislikes);
-          } else {
-            alert("Failed to process request: " + data.message);
-          }
-        },
-        error: function(xhr, status, error) {
-          console.error(xhr.responseText);
-          alert("An error occurred while processing the request.");
-        }
-      });
-    });
-
-    $(".dislike-btn").click(function(event) {
-      event.preventDefault();
-      var post_id = $(this).data("post-id");
-
-      $.ajax({
-        url: $(this).attr("href"),
-        method: "GET",
-        success: function(data) {
-          if (data.success) {
-            // Update the dislike count
-            $(".dislike-count-" + post_id).text(data.dislikes);
-            // Optionally, update the like count as well
-            $(".like-count-" + post_id).text(data.likes);
-          } else {
-            alert("Failed to process request: " + data.message);
-          }
-        },
-        error: function(xhr, status, error) {
-          console.error(xhr.responseText);
-          alert("An error occurred while processing the request.");
-        }
-      });
-    });
-  });
-</script>
 
 {% endblock %}

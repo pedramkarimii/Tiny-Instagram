@@ -3,24 +3,6 @@ from django.db import models
 from account.models import Profile, User
 from core.mixin import DeleteManagerMixin
 
-"""
-   +--------------+         +----------------+         +-----------+
-   |    Post      |         |    Comment     |         |    Vote   |
-   +--------------+         +----------------+         +-----------+
-   | id           |<--------| id             |<--------| id        |
-   | owner_id (FK)|         | post_id (FK)   |         | user_id   |
-   | body         |         | owner_id (FK)  |         | post_id   |
-   | post_picture |         | reply_id (FK)  |         | created   |
-   | title        |         | is_reply       |         +-----------+
-   | is_deleted   |         | comments       |
-   | is_active    |         | is_deleted     |
-   | delete_time  |         | delete_time    |
-   | create_time  |         | create_time    |
-   | update_time  |         | update_time    |
-   +--------------+         +----------------+
-
-"""
-
 
 class Post(models.Model):
     """
