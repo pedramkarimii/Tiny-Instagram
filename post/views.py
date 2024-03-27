@@ -194,8 +194,6 @@ class CreatePostView(MustBeLogingCustomView):
         if form.is_valid():
             post = form.save(commit=False)
             post.owner = Profile.objects.get(user=self.user)
-            print('P' * 20, post.owner)
-
             if 'post_picture' in self.files:
                 post.post_picture = self.files['post_picture']
                 post.save()
@@ -273,9 +271,10 @@ class FollowUserView(MustBeLogingCustomView):
         Initializes necessary attributes for the view.
         Sets up the user instance to follow/unfollow and defines the next page URL.
         """
-        self.users_instance = get_object_or_404(User, pk=kwargs['pk'])  # noqa
+        # self.post_instance = get_object_or_404(Post, pk=kwargs['pk'], is_active=True)  # noqa
+        self.users_instance = get_object_or_404(User, pk=kwargs['pk'], is_active=True)  # noqa
         self.user = request.user  # noqa
-        self.next_page_explorer = reverse_lazy('post_detail', kwargs={'pk': kwargs['pk']})  # noqa
+        self.next_page_post_detail = reverse_lazy('post_detail', kwargs={'pk': kwargs['pk']})  # noqa
         return super().setup(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
@@ -285,25 +284,34 @@ class FollowUserView(MustBeLogingCustomView):
         Checks if a relation already exists between the users. If it exists, unfollows the user;otherwise,creates a new
         relation to follow the user.
         """
-
+        # posts = Post.objects.filter(is_active=True, pk=kwargs['pk']).first()  # noqa
+        # if self.post_instance.is_active:  # Check if the user instance is active
+        #     # Handle follow/unfollow logic here
+        #     # This is just a placeholder, replace it with your actual logic
+        #     return redirect(self.next_page_explorer)
+        # else:
+        #     # User instance is not active, handle accordingly (e.g., show an error message)
+        #     # Redirect to an appropriate page
+        #     return redirect(self.next_page_explorer)
         relation = Relation.objects.filter(
             followers=self.user,
-            following=self.users_instance
+            following=self.users_instance,
         )
         if relation.exists():
             relation.delete()
             messages.success(request, f"You are unfollow this user {self.users_instance}.")
-            return redirect(self.next_page_explorer)
+            return redirect(self.next_page_post_detail)
         elif not relation.exists():
             Relation.objects.create(
                 followers=self.user,
                 following=self.users_instance,
+                is_follow=True
             )
             messages.success(request, f"You are now following {self.users_instance} .")
-            return redirect(self.next_page_explorer)
+            return redirect(self.next_page_post_detail)
         else:
             messages.error(request, "Failed to follow user")
-            return redirect(self.next_page_explorer)
+            return redirect(self.next_page_post_detail)
 
 
 class PostLikeView(MustBeLogingCustomView):

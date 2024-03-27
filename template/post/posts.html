@@ -105,10 +105,7 @@
                         </form>
                     </div>
 
-                    <!-- Share Button -->
 
-                </div>
-                <hr>
                  <div class="comments-container mt-2">
                     {% for comment in post.post_comments.all %}
                         {% if comment.is_reply == False %}
@@ -181,7 +178,7 @@
                     </form>
                     </div>
                 </div>
-            </div>
+                </div>
     {% endfor %}
     {% endif %}
 {% endblock %}

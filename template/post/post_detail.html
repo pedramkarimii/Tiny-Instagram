@@ -22,11 +22,6 @@
                     </div>
                     <div>
                         <div>
-                            {#                            {% if request.user.profile.pk != post.owner.user.profile.pk %}#}
-                            {#                                <form action="{% url 'follow_user' pk=post.owner.user.profile.pk %}" method="post">#}
-                            {#                                    {% csrf_token %}#}
-                            {#                                    <button type="submit" class="text-gray-600 font-semibold">Unfollow</button>#}
-                            {#                                </form>#}
                             {% if request.user.profile.pk != post.owner.user.profile.pk %}
                                 <form action="{% url 'follow_user' pk=post.owner.user.profile.pk %}" method="post">
                                     {% csrf_token %}
@@ -95,7 +90,7 @@
                     {% for reply in comment.reply_comments.all %}
                         <p class="text-gray-800 ">
                             <span class="comment-owner"> </span></p>
-{#                        <div class="comment-meta px-6 py-4 flex justify-between items-center">#}
+                        {#                        <div class="comment-meta px-6 py-4 flex justify-between items-center">#}
                         <div class="comment-body px-6 py-4 ">
                             <hr/>
                             <div
@@ -106,14 +101,14 @@
 
                             <div class="comment-body px-6 py-4">
                                 <p class="text-gray-800">
-                                {{ reply.comments | safe }}
+                                    {{ reply.comments | safe }}
                                 </p>
                             </div>
 
                             <div class="comment-body px-6 py-4">
                                 <p class="text-gray-800">
                                     {{ reply.create_time | timesince }}
-                                 </p>
+                                </p>
                             </div>
                         </div>
                     {% endfor %}
