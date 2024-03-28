@@ -35,10 +35,14 @@
                     </div>
                     <div class="px-6 py-4 ">
                         <div class="flex justify-center">
+                            {% for image in post.images.all %}
+
+
                             <a href="{% url "post_detail" post.id %}"><img
                                     class="inline-block mx-auto w-64 h-64 object-cover rounded-lg post-thumbnail"
-                                    src="{{ post.post_picture.url }}" alt="Post Image {{ user_post.user.username }}"
+                                    src="{{  image.images.url }}" alt="Post Image {{ user_post.user.username }}"
                                     data-post-id="{{ post.id }}"></a>
+                                {% endfor %}
                         </div>
                     </div>
                 </div>

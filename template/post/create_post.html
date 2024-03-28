@@ -12,6 +12,7 @@
                 {% csrf_token %}
             <div class="block text-sm font-medium text-gray-800 pl-14">
                    {{ form.as_p | safe }}
+                <input type="file" name="Image">
             </div>
                 <div>
                      <button
