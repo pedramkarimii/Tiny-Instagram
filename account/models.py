@@ -2,6 +2,7 @@ from django.db import models
 from core.mixin import DeleteManagerMixin
 from .mixin import BaseModelUserMixin
 from ckeditor.fields import RichTextField
+from django.core.validators import RegexValidator
 
 
 class User(BaseModelUserMixin):
@@ -19,9 +20,17 @@ class User(BaseModelUserMixin):
     - followers_count: Method to return the number of followers for the user.
     - following_count: Method to return the number of users the user is following.
     """
-    username = models.CharField(max_length=100, unique=True)
-    email = models.EmailField(max_length=100, unique=True)
-    phone_number = models.CharField(max_length=11, unique=True)
+    username = models.CharField(max_length=100,
+                                unique=True,
+                                validators=[RegexValidator(r'^[a-zA-Z0-9_.+-]+$',
+                                                           'Username must contain only letters, digits, or'
+                                                           ' underscores and be at least 4 characters long.')])
+    email = models.EmailField(max_length=100, unique=True,
+                              validators=[RegexValidator(r'^[a-zA-Z0-9._%+-]+@(?:gmail|yahoo)\.com$',
+                                                         'Please enter a valid gmail or yahoo email address.')])
+    phone_number = models.CharField(max_length=11, unique=True,
+                                    validators=[RegexValidator(r"09(1[0-9]|3[0-9]|2[0-9]|0[1-9]|9[0-9])[0-9]{7}$",
+                                                               'Please enter a valid phone number.')])
 
     @property
     def title(self):
@@ -157,8 +166,13 @@ class OptCode(models.Model):
         creation time.
     """
     code = models.PositiveSmallIntegerField()
-    phone_number = models.CharField(max_length=11, unique=True)
-    email = models.EmailField(max_length=100, unique=True, null=True, blank=True)
+    phone_number = models.CharField(max_length=11, unique=True,
+                                    validators=[RegexValidator(r"09(1[0-9]|3[0-9]|2[0-9]|0[1-9]|9[0-9])[0-9]{7}$",
+                                                               'Please enter a valid phone number.')])
+    email = models.EmailField(max_length=100, unique=True,
+                              validators=[RegexValidator(r'^[a-zA-Z0-9._%+-]+@(?:gmail|yahoo)\.com$',
+                                                         'Please enter a valid gmail or yahoo email address.')])
+
     created = models.DateTimeField(auto_now_add=True)
     is_used = models.BooleanField(default=False)
 
