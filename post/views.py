@@ -1,4 +1,5 @@
 from django.contrib.postgres.search import TrigramSimilarity
+from django.views import View
 from django.views.generic import DetailView
 from post.forms import SearchForm
 from django.core.exceptions import ObjectDoesNotExist
@@ -6,7 +7,7 @@ from django.urls import reverse_lazy
 from account.models import User, Profile, Relation
 from core.mixin import HttpsOptionNotLogoutMixin as MustBeLogingCustomView
 from post.forms import UpdatePostForm, CreatCommentForm
-from post.models import Post, Vote
+from post.models import Post, Vote, Image
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 
@@ -173,10 +174,11 @@ class CreatePostView(MustBeLogingCustomView):
         self.form_class = UpdatePostForm  # noqa
         self.template_create_post = 'post/create_post.html'  # noqa
         self.next_page_create_post = reverse_lazy('create_post')  # noqa
-        self.files = request.FILES  # noqa
-        self.user = request.user  # noqa
+        self.request_files = request.FILES  # noqa
+        self.request_user = request.user  # noqa
+        self.request_post = request.POST  # noqa
         try:
-            self.user_profile = Profile.objects.get(user=self.user)
+            self.user_profile = Profile.objects.get(user=self.request_user)
         except ObjectDoesNotExist:
             messages.error(request, "You must have a profile. Please create a profile")
             self.user_profile = None  # noqa
@@ -189,21 +191,23 @@ class CreatePostView(MustBeLogingCustomView):
         return render(request, self.template_create_post, {'form': self.form_class()})
 
     def post(self, request):
-        """Process the form submission for creating a post."""
-        form = self.form_class(request.POST, self.files)
+        form = UpdatePostForm(self.request_post, self.request_files)
         if form.is_valid():
             post = form.save(commit=False)
-            post.owner = Profile.objects.get(user=self.user)
-            if 'post_picture' in self.files:
-                post.post_picture = self.files['post_picture']
+            post.owner = Profile.objects.get(user=self.request_user)
+
+            if 'Image' in self.request_files:
+                image = Image(post_image=post, images=self.request_files['Image'])
                 post.save()
-                messages.success(request, 'Post created successfully!')
-                return redirect(self.next_page_create_post)
+                image.save()
+                messages.success(request, 'Post created successfully with image!')
             else:
-                messages.error(request, 'Failed to create post')
-                return redirect(self.template_create_post)
+                messages.success(request, 'Post created successfully!')
+
+            return redirect(reverse_lazy('create_post'))
         else:
-            return render(request, self.template_create_post, {'form': form})
+            messages.error(request, 'Failed to create post')
+            return render(request, 'post/create_post.html', {'form': form})
 
 
 class UpdatePostView(MustBeLogingCustomView):
@@ -225,8 +229,9 @@ class UpdatePostView(MustBeLogingCustomView):
                    next_page_show_post, next_page_show_update_post and retrieve the post instance."""
         self.template_update_post = 'post/update_post.html'  # noqa
         self.form_class = UpdatePostForm  # noqa
-        self.files = request.FILES  # noqa
-        self.user = request.user  # noqa
+        self.request_files = request.FILES  # noqa
+        self.request_user = request.user  # noqa
+        self.request_post = request.POST  # noqa
         self.next_page_show_post = reverse_lazy('show_post', kwargs={'pk': kwargs['pk']})  # noqa
         self.next_page_show_update_post = reverse_lazy('update_post', kwargs={'pk': kwargs['pk']})  # noqa
         self.post_instance = get_object_or_404(Post, pk=kwargs['pk'])  # noqa
@@ -243,13 +248,14 @@ class UpdatePostView(MustBeLogingCustomView):
         """
         Processes the form submission for updating a post.
         """
-        form = self.form_class(request.POST, self.files, instance=self.post_instance)
+        form = self.form_class(self.request_post, self.request_files, instance=self.post_instance)
         if form.is_valid():
             posts = form.save(commit=False)
-            posts.owner = Profile.objects.get(user=self.user)
-            if 'post_picture' in self.files:
-                posts.post_picture = self.files['post_picture']
+            posts.owner = Profile.objects.get(user=self.request_user)
+            if 'Image' in self.request_files:
+                image = Image(post_image=posts, images=self.request_files['Image'])
                 posts.save()
+                image.save()
                 messages.success(request, 'Post updated successfully')
                 return redirect(self.next_page_show_post)
             else:
