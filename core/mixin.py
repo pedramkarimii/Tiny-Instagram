@@ -1,5 +1,8 @@
+import os
+import uuid
+
+from django.utils import timezone
 from django.contrib import messages
-from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
@@ -15,6 +18,14 @@ class SoftDeleteMixin(models.QuerySet):
         mark them as deleted by setting the 'is_deleted' field to True.
         """
         return super().update(is_deleted=True, is_active=False)
+
+    def undelete(self):
+        """
+        Undelete objects in the queryset.
+
+        Mark objects as not deleted by setting the 'is_deleted' field to False.
+        """
+        return super().update(is_deleted=False, is_active=True)
 
 
 class DeleteManagerMixin(models.Manager):
@@ -131,3 +142,12 @@ class HttpsOptionLoginMixin(View):
         """
         super().http_method_not_allowed(request, *args, **kwargs)
         return render(request, self.template_http_method_not_allowed)
+
+
+def image_upload_path_mixin(instance, filename):
+    """Generate file path for image uploads"""
+    base_filename, file_extension = os.path.splitext(filename)
+    timestamp = timezone.now().strftime('%Y%m%d')
+    unique_id = str(uuid.uuid4())[:8]  # Get the first 8 characters of UUID
+    owner_id = instance.post_image.id if instance.post_image else 'unknown'
+    return f'post_picture/{owner_id}/{base_filename}_{timestamp}_{unique_id}{file_extension}'

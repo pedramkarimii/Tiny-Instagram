@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Post, Comment, Vote
+from .models import Post, Comment, Vote, Image
 
 
 class CommentInline(admin.TabularInline):
@@ -44,6 +44,24 @@ class VoteAdmin(admin.ModelAdmin):
     row_id_fields = ('user', 'post',)
 
 
+class ImageInline(admin.TabularInline):
+    model = Image
+    can_delete = False
+    fk_name = 'post_image'
+    ordering = ('-create_time',)
+    row_id_fields = ('post_image',)
+    list_display = ('post_image', 'images', 'is_active', 'create_time', 'update_time')
+    list_filter = ('post_image', 'is_deleted',)
+    search_fields = ('post_image__username', 'create_time', 'update_time')
+
+
+@admin.register(Image)
+class ImageAdmin(admin.ModelAdmin):
+    list_display = ('post_image', 'images', 'is_active', 'create_time', 'update_time')
+    list_filter = ('is_active',)
+    search_fields = ('post_image__username', 'create_time', 'update_time')
+
+
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
     """
@@ -57,7 +75,7 @@ class PostAdmin(admin.ModelAdmin):
     search_fields = ['owner', 'update_time']
     ordering = ('-update_time',)
     row_id_fields = ('owner',)
-    inlines = (CommentInline, VoteInline)
+    inlines = (CommentInline, VoteInline, ImageInline)
 
     def get_inline_instances(self, request, obj=None):
         """

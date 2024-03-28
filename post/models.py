@@ -1,7 +1,7 @@
 from ckeditor.fields import RichTextField
 from django.db import models
 from account.models import Profile, User
-from core.mixin import DeleteManagerMixin
+from core.mixin import DeleteManagerMixin, image_upload_path_mixin
 
 
 class Post(models.Model):
@@ -10,7 +10,6 @@ class Post(models.Model):
     Fields:
     - owner: ForeignKey to the Profile model representing the owner of the post.
     - body: RichTextField containing the content of the post.
-    - post_picture: ImageField for uploading post pictures.
     - title: CharField for the title of the post.
     - is_deleted: BooleanField indicating if the post is deleted.
     - is_active: BooleanField indicating if the post is active.
@@ -31,9 +30,8 @@ class Post(models.Model):
     - get_latest_by: Specifies the field to use for retrieving the latest Post object.
     - indexes: Defines indexes for owner and title fields.
     """
-    owner = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='posts')
+    owner = models.ForeignKey(Profile, on_delete=models.NullBooleanField, related_name='posts')
     body = RichTextField()
-    post_picture = models.ImageField(upload_to='post_picture/%Y/%m/%d/')
     title = models.CharField(max_length=255)
     is_deleted = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
@@ -73,6 +71,98 @@ class Post(models.Model):
         - Integer representing the count of comments on the post.
         """
         return self.post_comments.count()
+
+
+# class ImageAlbum(models.Model):
+#     """
+#     Defines the ImageAlbum model which represents an image album.
+#     Fields:
+#     - owner: ForeignKey to the Profile model representing the owner of the album.
+#     - title: CharField for the title of the album.
+#     - is_deleted: BooleanField indicating if the album is deleted.
+#     - delete_time: DateTimeField indicating the time when the album was deleted.
+#     - create_time: DateTimeField indicating the time when the album was created.
+#     - update_time: DateTimeField indicating the time when the album was last updated.
+#
+#     Methods:
+#     - __str__: Returns a string representation of the ImageAlbum object.
+#
+#     Meta:
+#     - ordering: Specifies the default ordering of ImageAlbum objects.
+#     - verbose_name: Sets the display name for a single ImageAlbum object.
+#     - verbose_name_plural: Sets the display name for multiple ImageAlbum objects.
+#     - get_latest_by: Specifies the field to use for retrieving the latest ImageAlbum object.
+#     - indexes: Defines indexes for owner and title fields.
+#     """
+#     owner = models.OneToOneField(Profile, on_delete=models.CASCADE, related_name='image_album')
+#     is_deleted = models.BooleanField(default=False)
+#     delete_time = models.DateTimeField(auto_now=True, editable=False)
+#     create_time = models.DateTimeField(auto_now_add=True, editable=False)
+#     update_time = models.DateTimeField(auto_now=True, editable=False)
+#     objects = DeleteManagerMixin()  # Assuming UserManager is a custom manager < soft delete >
+#
+#     class Meta:
+#         ordering = ('-update_time', '-create_time')
+#         verbose_name = 'Image Album'
+#         verbose_name_plural = 'Image Albums'
+#         get_latest_by = '-create_time'
+#         indexes = [
+#             models.Index(fields=['owner', 'title'], name='index_owner_title_image_albums')
+#         ]
+#
+
+class Image(models.Model):
+    """
+    Defines the Image model which represents images uploaded by users.
+    Fields:
+    - owner_image: ForeignKey to the Post model representing the user who uploaded the image.
+    - images: ImageField for the image file.
+    - is_deleted: BooleanField indicating if the image is deleted.
+    - delete_time: DateTimeField indicating the time when the image was deleted.
+    - create_time: DateTimeField indicating the time when the image was created.
+    - update_time: DateTimeField indicating the time when the image was last updated.
+    - objects: Custom manager for soft deletion.
+    - Meta:
+    - ordering: Specifies the default ordering of Image objects.
+    - verbose_name: Sets the display name for a single Image object.
+    - verbose_name_plural: Sets the display name for multiple Image objects.
+    - get_latest_by: Specifies the field to use for retrieving the latest Image object.
+    - constraints: Defines a unique constraint on owner_image and images.
+    - indexes: Defines indexes for owner_image and images fields.
+    - archive: Returns all objects, including deleted and inactive ones.
+    - get_queryset_object: Returns the queryset object associated with this manager.
+    """
+    post_image = models.ForeignKey(Post, on_delete=models.PROTECT, related_name='images')
+    # from django.core.exceptions import ProtectedError
+    #
+    # try:
+    #     # Attempt to delete the Post object
+    #     post_instance.delete()
+    # except ProtectedError:
+    #     # Handle the case where there are related YourModel instances
+    #     print("Cannot delete the Post object as it is referenced by YourModel instances.")
+    images = models.ImageField(upload_to=image_upload_path_mixin)
+    is_deleted = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    delete_time = models.DateTimeField(auto_now=True, editable=False)
+    create_time = models.DateTimeField(auto_now_add=True, editable=False)
+    update_time = models.DateTimeField(auto_now=True, editable=False)
+    objects = DeleteManagerMixin()  # Assuming UserManager is a custom manager < soft delete >
+
+    def __str__(self):
+        return f'{self.post_image} - {self.images}'
+
+    class Meta:
+        ordering = ('-update_time', '-create_time', 'post_image')
+        verbose_name = 'Image'
+        verbose_name_plural = 'Images'
+        get_latest_by = '-create_time'
+        constraints = [
+            models.UniqueConstraint(fields=['post_image', 'images'], name='unique_post_imagee__images')
+        ]
+        indexes = [
+            models.Index(fields=['post_image', 'images'], name='index_post_image_images')
+        ]
 
 
 class Comment(models.Model):
