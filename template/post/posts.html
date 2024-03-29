@@ -23,12 +23,13 @@
 
             </form>
         </div>
-        {% for post in posts %}
 
 
-            <div class="max-w-3xl  mx-auto">
+
+            <div class="max-w-7xl mx-auto grid grid-cols-3 gap-4 ">
+            {% for post in posts %}
             <!-- Single Post -->
-            <div class=" bg-gradient-to-r  from-gray-300 via-gray-100  shadow-lg rounded-lg overflow-hidden mb-8 mt-4">
+            <div class=" grid bg-gray-300 shadow-lg rounded-lg  mb-8 mt-4">
                 <!-- Header -->
                 <div class="px-6 py-4  border-b border-gray-200">
                     <div class="flex items-center justify-between">
@@ -49,189 +50,75 @@
                 <div class="px-6 py-4">
                     <div class="flex justify-center">
 
-<div id="slider">
-    <!-- Insert your images here -->
-    {% for post in posts %}
-        {% for image in post.images.all %}
-            <div class="slide">
-                <img class="w-84 h-84" src="{{ image.images.url }}" alt="Post Image {{ post.owner.user.username }}">
-            </div>
-        {% endfor %}
-    {% endfor %}
+ {% for image in post.images.all %}
+
+
+                            <a href="{% url "post_detail" post.id %}"><img
+                                    class="inline-block mx-auto w-84 h-84 object-cover rounded-lg post-thumbnail"
+                                    src="{{  image.images.url }}" alt="Post Image {{ user_post.user.username }}"
+                                    data-post-id="{{ post.id }}"></a>
+                                {% endfor %}
+
+
 </div>
 
-
-
-                    </div>
                     <p class="text-gray-800 mt-4 mb-4 leading-relaxed"><b>{{ post.title | safe }}</b></p>
                     <p class="text-gray-800 mt-4 mb-4 leading-relaxed">{{ post.body | safe }}</p>
 
                 </div>
-                <p class="text-sm pl-5 pb-4 text-left text-gray-700">{{ post.create_time | date:"Y-N-l  |  P" }}</p>
-                <!-- Footer -->
-                <div class="px-6 py-4 border-t border-gray-200 flex justify-between items-center">
-                    <div class="flex ">
-                        <!-- Like Button -->
-                        <button class="text-blue-600 font-semibold mr-4 flex items-center">
-                            <svg class="w-6 h-6 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                 xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            <span>Like</span>
-                            <span class="text-sm pl-2">{{ post.likes_count }}</span>
-                        </button>
 
-                        <!-- Comment Button -->
-
-
-                        <button class="text-gray-600 font-semibold ml-8 mr-4 flex items-center">
-                            <svg class="w-6 h-6 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                 xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M21 10a1 1 0 00-1-1h-6.5a3.5 3.5 0 01-3.5-3.5V4a1 1 0 00-1-1H4a1 1 0 00-1 1v16a1 1 0 001 1h11.7l3.3 3.3a1 1 0 001.4 0l3.6-3.6a1 1 0 000-1.4l-3.3-3.3zm-5 4l-2 2m2-2l2-2m-2 2H7"></path>
-                            </svg>
-                            <span>Comment</span>
-                            <span class="text-sm pl-2">{{ post.comments_count }}</span>
-                        </button>
-
-                    </div>
-                    <div class="flex  items-center">
+           <div class="flex  items-center">
+               <p class="text-sm pl-5 pb-4 mr-12 text-left text-gray-700">{{ post.create_time | date:"Y-N-l  |  P" }}</p>
                         <!-- Add your existing like, dislike, and comment buttons here -->
 
                         <!-- Update Button -->
                         <form action="" method="post" class="inline" enctype="multipart/form-data">
                             {% csrf_token %}
                             <a href="{% url 'update_post' post.id %}" onclick="redirectToChangePost({{ post.id }}) "
-                               class="text-blue-400 font-semibold pr-3 mt-4 flex items-center hover:text-blue-800">
+                               class="ml-8 text-blue-400 font-semibold pr-3 mt-4 flex text_center items-center hover:text-blue-800">
                                 Update</a></form>
                         <!-- Delete Button -->
                         <form action="" method="post" class="inline">
                             {% csrf_token %}
                             <a href="{% url 'delete_post' post.id %}" onclick="redirectToDeletePost({{ post.id }}) "
-                               class="text-red-400 font-semibold  mt-4 flex items-center hover:text-red-800">
+                               class="text-red-400 font-semibold text_center mt-4 flex items-center hover:text-red-800">
                                 Delete </a>
                         </form>
                     </div>
 
-
-                    <div class="comments-container mt-2">
-                        {% for comment in post.post_comments.all %}
-                            {% if comment.is_reply == False %}
-                                <div class="comment-item border-t border-gray-400">
-                                <div class="comment-body px-6 py-4">
-                                    <p class="text-gray-800">
-                                        <span class="comment-time">@{{ comment.owner }}</span>
-                                    </p>
-                                    <p class="text-gray-800">
-                                        <span class="comment-time">{{ comment.comments | safe }}</span>
-                                    </p>
-                                </div>
-                                <div class="comment-body px-6 py-4">
-                                    <p class="text-gray-800">
-                                        <span class="comment-time">{{ comment.create_time | timesince }}</span>
-                                    </p>
-                                </div>
-                            {% endif %}
-                        {% for reply in comment.reply_comments.all %}
-
-
-                            <p class="text-gray-800 ">
-                                <span class="comment-owner"> </span></p>
-                            {#                        <div class="comment-meta px-6 py-4 flex justify-between items-center">#}
-                            <div class="comment-body px-6 py-4 ">
-                                <hr/>
-                                <div
-                                        class="comment-body px-6 py-4">
-                                    <p class="text-gray-800">
-                                        @{{ reply.owner }}  </p>
-                                </div>
-
-                                <div class="comment-body px-6 py-4">
-                                    <p class="text-gray-800">
-                                        {{ reply.comments | safe }}
-                                    </p>
-                                </div>
-
-                                <div class="comment-body px-6 py-4">
-                                    <p class="text-gray-800">
-                                        {{ reply.create_time | timesince }}
-                                    </p>
-                                </div>
-                            </div>
-                        {% endfor %}
-
-                        {% empty %}
-                        <p class="mt-4 ml-4 text-gray-800">No comment yet!</p>
-                        </div>
-                        {% endfor %}
-
-                    </div>
-                    <div class=" ml-4 mb-2 comment-item border-t border-gray-400">
-
-                        <form method="post" action="{% url 'post_detail'  post.id %}">
-                            {% csrf_token %}
-                            <p class=" mt-4 mb-4">Create Comment{{ form.comments }}</p>
-
-                            <div>
-                                <label for="id_is_reply"></label><br>
-                                <input type="checkbox" name="is_reply" id="id_is_reply"
-                                       {% if form.is_reply.value %}checked{% endif %}>
-                            </div>
-
-
-
-                            <p class="mt-2">{{ form.reply }}</p>
-                            <a href="{% url 'post_detail' post.id %}">
-                                <button class="text-gray-800 font-semibold ml-56 mb-4 mt-4  mr-4 flex items-center">
-                                    <span>Send Comment</span>
-                                    <span class="text-sm pl-2"></span>
-                                </button>
-                            </a>
-
-                        </form>
-                    </div>
                 </div>
-            </div>
+
         {% endfor %}
+        </div>
     {% endif %}
+    <script>
+const slides = document.querySelectorAll('.slide');
+let currentSlide = 0;
 
-{% endblock %}
+function showSlide(n) {
+    slides.forEach((slide) => {
+        slide.style.display = 'none';
+    });
+    slides[n].style.display = 'block';
+}
 
+function nextSlide() {
+    currentSlide++;
+    if (currentSlide >= slides.length) {
+        currentSlide = 0;
+    }
+    showSlide(currentSlide);
+}
 
-<script>
- {#const slider = document.getElementById('slider');#}
- {#   const slides = document.querySelectorAll('.slide');#}
- {#   const prevBtn = document.getElementById('prevBtn');#}
- {#   const nextBtn = document.getElementById('nextBtn');#}
- {#   let currentSlide = 0;#}
- {##}
- {#   // Next Button Click Handler#}
- {#   nextBtn.addEventListener('click', function () {#}
- {#       currentSlide++;#}
- {#       if (currentSlide >= slides.length) {#}
- {#           currentSlide = 0;#}
- {#       }#}
- {#       updateSlider();#}
- {#   });#}
- {##}
- {#   // Previous Button Click Handler#}
- {#   prevBtn.addEventListener('click', function () {#}
- {#       currentSlide--;#}
- {#       if (currentSlide < 0) {#}
- {#           currentSlide = slides.length - 1;#}
- {#       }#}
- {#       updateSlider();#}
- {#   });#}
- {##}
- {#   // Function to update slider position#}
- {#   function updateSlider() {#}
- {#       for (let i = 0; i < slides.length; i++) {#}
- {#           slides[i].style.display = 'none';#}
- {#       }#}
- {#       slides[currentSlide].style.display = 'block';#}
- {#   }#}
+function prevSlide() {
+    currentSlide--;
+    if (currentSlide < 0) {
+        currentSlide = slides.length - 1;
+    }
+    showSlide(currentSlide);
+}
 
+showSlide(currentSlide);
 
     function redirectToChangePost(id) {
         window.location.href = `post/${id}/update/`;
@@ -243,3 +130,7 @@
 
 
 </script>
+
+{% endblock %}
+
+
