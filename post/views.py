@@ -1,5 +1,4 @@
 from django.contrib.postgres.search import TrigramSimilarity
-from django.views import View
 from django.views.generic import DetailView
 from post.forms import SearchForm
 from django.core.exceptions import ObjectDoesNotExist
@@ -195,11 +194,11 @@ class CreatePostView(MustBeLogingCustomView):
         if form.is_valid():
             post = form.save(commit=False)
             post.owner = Profile.objects.get(user=self.request_user)
-
+            post.save()
             if 'Image' in self.request_files:
                 image = Image(post_image=post, images=self.request_files['Image'])
-                post.save()
                 image.save()
+
                 messages.success(request, 'Post created successfully with image!')
             else:
                 messages.success(request, 'Post created successfully!')
@@ -252,9 +251,9 @@ class UpdatePostView(MustBeLogingCustomView):
         if form.is_valid():
             posts = form.save(commit=False)
             posts.owner = Profile.objects.get(user=self.request_user)
+            posts.save()
             if 'Image' in self.request_files:
                 image = Image(post_image=posts, images=self.request_files['Image'])
-                posts.save()
                 image.save()
                 messages.success(request, 'Post updated successfully')
                 return redirect(self.next_page_show_post)
@@ -290,15 +289,6 @@ class FollowUserView(MustBeLogingCustomView):
         Checks if a relation already exists between the users. If it exists, unfollows the user;otherwise,creates a new
         relation to follow the user.
         """
-        # posts = Post.objects.filter(is_active=True, pk=kwargs['pk']).first()  # noqa
-        # if self.post_instance.is_active:  # Check if the user instance is active
-        #     # Handle follow/unfollow logic here
-        #     # This is just a placeholder, replace it with your actual logic
-        #     return redirect(self.next_page_explorer)
-        # else:
-        #     # User instance is not active, handle accordingly (e.g., show an error message)
-        #     # Redirect to an appropriate page
-        #     return redirect(self.next_page_explorer)
         relation = Relation.objects.filter(
             followers=self.user,
             following=self.users_instance,
