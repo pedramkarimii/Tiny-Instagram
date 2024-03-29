@@ -1,8 +1,8 @@
-from ckeditor.fields import RichTextField
 from django.contrib.auth.forms import ReadOnlyPasswordHashField, PasswordChangeForm, PasswordResetForm
 from django.contrib.auth.hashers import check_password
 from django.core.exceptions import ValidationError
-
+from django.forms.widgets import TextInput, Select
+from ckeditor.widgets import CKEditorWidget
 from account.models import User, Profile, OptCode
 from django import forms
 import re
@@ -503,15 +503,33 @@ class ProfileChangeOrCreationForm(forms.ModelForm):
         save: Method to save the changes made in the form.
 
     """
-    full_name = forms.CharField(label='Full Name', required=False,
-                                widget=forms.TextInput(attrs={'class': 'form-control'}))
-    name = forms.CharField(label='Name', required=False, widget=forms.TextInput(attrs={'class': 'form-control'}))
-    last_name = forms.CharField(label='Last Name', required=False,
-                                widget=forms.TextInput(attrs={'class': 'form-control'}))
-    age = forms.IntegerField(label='Age', required=False, widget=forms.NumberInput(attrs={'class': 'form-control'}))
-    gender = forms.ChoiceField(label='Gender', required=False, choices=[('M', 'Male'), ('F', 'Female')],
-                               widget=forms.Select(attrs={'class': 'form-control'}))
-    bio = RichTextField(config_name='default', )
+    GENDER_CHOICES = (
+        ('male', 'Male'),
+        ('female', 'Female'),
+    )
+
+    full_name = forms.CharField(label='Full Name', required=False, widget=TextInput(attrs={
+        'class': 'mt-1 pt-2 py-2 px-4 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm'
+                 ' border-gray-300 rounded-md'}))
+    name = forms.CharField(label='Name', required=False, widget=TextInput(attrs={
+        'class': 'mt-1 pt-2 py-2 px-4 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm'
+                 ' border-gray-300 rounded-md'}))
+    last_name = forms.CharField(label='Last Name', required=False, widget=TextInput(attrs={
+        'class': 'mt-1 pt-2 py-2 px-4 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm'
+                 ' border-gray-300 rounded-md'}))
+    age = forms.IntegerField(label='Age', required=False, widget=forms.NumberInput(attrs={
+        'class': 'mt-1 pt-2 py-2 px-4 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm'
+                 ' border-gray-300 rounded-md',
+        'min': '18'}))
+    gender = forms.ChoiceField(label='Gender', choices=GENDER_CHOICES, widget=Select(attrs={
+        'class': 'mt-1 pt-2 py-2 px-4 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm'
+                 ' border-gray-300 rounded-md'}))
+    bio = forms.CharField(label='Bio',
+                          required=False, widget=CKEditorWidget(attrs={'class': 'mt-1 pt-2 py-2 px-4 '
+                                                                                'focus:ring-indigo-500 '
+                                                                                'focus:border-indigo-500 block w-full '
+                                                                                'shadow-sm sm:text-sm border-gray-300 '
+                                                                                'rounded-md'}))
     profile_picture = forms.ImageField(label='Profile Picture', required=False,
                                        widget=forms.FileInput(attrs={'class': 'form-control'}))
 
@@ -557,15 +575,9 @@ class ProfileChangeOrCreationForm(forms.ModelForm):
         Returns:
             Profile: The profile instance with the updated profile picture.
         """
-        # Retrieve the user's profile
         profile = Profile.objects.get(user_id=user_id)
-
-        # Check if the form has a profile picture file attached
         if 'profile_picture' in self.files:
-            # Assign the uploaded profile picture to the profile
             profile.profile_picture = self.files['profile_picture']
-
-            # Save the profile if commit is True
             if commit:
                 profile.save()
 
@@ -597,16 +609,10 @@ class ProfileChangeOrCreationForm(forms.ModelForm):
             forms.ValidationError: If an invalid gender selection is made.
         """
         gender = self.cleaned_data.get('gender')
-        if gender not in ['M', 'F']:
+
+        if gender not in ['male', 'female']:
             raise forms.ValidationError("Invalid gender selection.")
-        elif gender == 'M':
-            gender = 'Male'
-            self.cleaned_data['gender'] = gender
-            return gender
-        elif gender == 'F':
-            gender = 'Female'
-            self.cleaned_data['gender'] = gender
-            return gender
+        return gender
 
     def save(self, commit=True):
         """

@@ -132,7 +132,10 @@
                                    {% if form.is_reply.value %}checked{% endif %}>
                         </div>
 
-                        <p class="mt-2">{{ form.reply }}</p>
+
+
+        {{ form.reply }}
+
                         <a href="{% url 'post_detail' post.id %}">
                             <button class="text-gray-800 font-semibold ml-56 mb-4 mt-4  mr-4 flex items-center">
                                 <span>Send Comment</span>
