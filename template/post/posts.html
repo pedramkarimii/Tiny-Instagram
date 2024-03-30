@@ -26,49 +26,56 @@
 
 
 
-            <div class="max-w-7xl mx-auto grid grid-cols-3 gap-4 ">
+        <div class="max-w-7xl mx-auto grid grid-cols-3 gap-4 ">
             {% for post in posts %}
-            <!-- Single Post -->
-            <div class=" grid bg-gray-300 shadow-lg rounded-lg  mb-8 mt-4">
-                <!-- Header -->
-                <div class="px-6 py-4  border-b border-gray-200">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <img class="w-12 h-12 object-cover rounded-full mr-4"
-                                 src="{{ user.profile.profile_picture.url }}"
-                                 alt="Profile Picture">
-                            <div>
-                                <h2 class="text-lg font-semibold text-gray-800"><a
-                                        href="{% url 'profile_detail' pk=user.profile.user_id %}">{{ user.username }} </a>
-                                </h2>
-                                <p class="text-sm text-gray-600">{{ user.profile.bio | safe }}</p>
+                <!-- Single Post -->
+                <div class=" grid bg-gray-300 shadow-lg rounded-lg  mb-8 mt-4">
+                    <!-- Header -->
+                    <div class="px-6 py-4  border-b border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <img class="w-12 h-12 object-cover rounded-full mr-4"
+                                     src="{{ user.profile.profile_picture.url }}"
+                                     alt="Profile Picture">
+                                <div>
+                                    <h2 class="text-lg font-semibold text-gray-800"><a
+                                            href="{% url 'profile_detail' pk=user.profile.user_id %}">{{ user.username }} </a>
+                                    </h2>
+                                    <p class="text-sm text-gray-600">{{ user.profile.bio | safe }}</p>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <!-- Content -->
-                <div class="px-6 py-4">
-                    <div class="flex justify-center">
+                    <!-- Content -->
+                    <div class="px-6 py-4">
+                        <div class="flex justify-center">
+                            <div class="carousel relative" id="carousel_{{ post.id }}">
+                                <div class="carousel-inner">
+                                    {% for image in post.images.all %}
+                                        <div class="carousel-item">
+                                            <a href="{% url "post_detail" post.id %}">
+                                                <img src="{{ image.images.url }}"
+                                                     alt="Post Image {{ post.owner.username }} {{ forloop.counter }}">
+                                            </a>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <button class="carousel-prev absolute top-1/2 left-4 transform -translate-y-1/2 text-red-800 rounded-full px-3 py-1 focus:outline-none">
+                                    &#10094;
+                                </button>
+                                <button class="carousel-next absolute top-1/2 right-4 transform -translate-y-1/2 text-red-800 rounded-full px-3 py-1 focus:outline-none">
+                                    &#10095;
+                                </button>
+                            </div>
+                        </div>
 
- {% for image in post.images.all %}
+                        <p class="text-gray-800 mt-4 mb-4 leading-relaxed"><b>{{ post.title | safe }}</b></p>
+                        <p class="text-gray-800 mt-4 mb-4 leading-relaxed">{{ post.body | safe }}</p>
 
+                    </div>
 
-                            <a href="{% url "post_detail" post.id %}"><img
-                                    class="inline-block mx-auto w-84 h-84 object-cover rounded-lg post-thumbnail"
-                                    src="{{  image.images.url }}" alt="Post Image {{ user_post.user.username }}"
-                                    data-post-id="{{ post.id }}"></a>
-                                {% endfor %}
-
-
-</div>
-
-                    <p class="text-gray-800 mt-4 mb-4 leading-relaxed"><b>{{ post.title | safe }}</b></p>
-                    <p class="text-gray-800 mt-4 mb-4 leading-relaxed">{{ post.body | safe }}</p>
-
-                </div>
-
-           <div class="flex  items-center">
-               <p class="text-sm pl-5 pb-4 mr-12 text-left text-gray-700">{{ post.create_time | date:"Y-N-l  |  P" }}</p>
+                    <div class="flex  items-center">
+                        <p class="text-sm pl-5 pb-4 mr-12 text-left text-gray-700">{{ post.create_time | date:"Y-N-l  |  P" }}</p>
                         <!-- Add your existing like, dislike, and comment buttons here -->
 
                         <!-- Update Button -->
@@ -88,48 +95,61 @@
 
                 </div>
 
-        {% endfor %}
+            {% endfor %}
         </div>
     {% endif %}
     <script>
-const slides = document.querySelectorAll('.slide');
-let currentSlide = 0;
-
-function showSlide(n) {
-    slides.forEach((slide) => {
-        slide.style.display = 'none';
-    });
-    slides[n].style.display = 'block';
-}
-
-function nextSlide() {
-    currentSlide++;
-    if (currentSlide >= slides.length) {
-        currentSlide = 0;
-    }
-    showSlide(currentSlide);
-}
-
-function prevSlide() {
-    currentSlide--;
-    if (currentSlide < 0) {
-        currentSlide = slides.length - 1;
-    }
-    showSlide(currentSlide);
-}
-
-showSlide(currentSlide);
-
-    function redirectToChangePost(id) {
-        window.location.href = `../../app/post/${id}/update/`;
-    }
-
-    function redirectToDeletePost(id) {
-        window.location.href = `../../app/post/${id}/delete/`;
-    }
 
 
-</script>
+
+        // Carousel functionality
+        const carousels = document.querySelectorAll('.carousel');
+        carousels.forEach((carousel) => {
+            const prevButton = carousel.querySelector('.carousel-prev');
+            const nextButton = carousel.querySelector('.carousel-next');
+            const slides = carousel.querySelectorAll('.carousel-item');
+            let currentSlide = 0;
+
+            const showSlide = (index) => {
+                slides.forEach((slide, i) => {
+                    if (i === index) {
+                        slide.style.display = 'block';
+                    } else {
+                        slide.style.display = 'none';
+                    }
+                });
+                currentSlide = index;
+            };
+
+            const showNextSlide = () => {
+                currentSlide = (currentSlide + 1) % slides.length;
+                showSlide(currentSlide);
+            };
+
+            const showPrevSlide = () => {
+                currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+                showSlide(currentSlide);
+            };
+
+            // Show initial slide
+            showSlide(currentSlide);
+
+            // Add event listeners to navigation buttons
+            prevButton.addEventListener('click', showPrevSlide);
+            nextButton.addEventListener('click', showNextSlide);
+        });
+
+
+        function redirectToChangePost(id) {
+            window.location.href = `../../app/post/${id}/update/`;
+        }
+
+        function redirectToDeletePost(id) {
+            window.location.href = `../../app/post/${id}/delete/`;
+        }
+
+
+    </script>
 
 {% endblock %}
 

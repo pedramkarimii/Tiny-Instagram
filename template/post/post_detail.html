@@ -45,24 +45,22 @@
                     <div class="px-6 py-4 ">
                         <div class="flex justify-center">
 
-
-                            {% for image in post.images.all %}
-                                <div class="slide">
-                                    <img class="w-96 h-96" src="{{ image.images.url }}"
-                                         alt="Post Image {{ post.owner.user.username }}">
+                            <div class="carousel relative">
+                                <div class="carousel-inner">
+                                    {% for image in post.images.all %}
+                                        <div class="carousel-item">
+                                            <img src="{{ image.images.url }}"
+                                                 alt="Post Image {{ post.owner.user.username }} {{ forloop.counter }}">
+                                        </div>
+                                    {% endfor %}
                                 </div>
-                            {% endfor %}
-
-
-                        </div>
-                        <div class="flex justify-center mt-4">
-
-                            <button onclick="prevSlide()"
-                                    class="bg-gray-500 hover:bg-blue-700 text-white font-bold py-2 px-2 mr-2">Previous
-                            </button>
-                            <button onclick="nextSlide()"
-                                    class="bg-blue-500 hover:bg-gray-700 text-white font-bold py-2 px-4">Next
-                            </button>
+                                <button class="carousel-prev absolute top-1/2 left-4 transform -translate-y-1/2 text-red-800 rounded-full px-3 py-1 focus:outline-none">
+                                    &#10094;
+                                </button>
+                                <button class="carousel-next absolute top-1/2 right-4 transform -translate-y-1/2 text-red-800 rounded-full px-3 py-1 focus:outline-none">
+                                    &#10095;
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -193,33 +191,41 @@
     {% endif %}
     </div>
     <script>
-        const slides = document.querySelectorAll('.slide');
+
+        const carousel = document.querySelector('.carousel');
+        const prevButton = carousel.querySelector('.carousel-prev');
+        const nextButton = carousel.querySelector('.carousel-next');
+        const slides = carousel.querySelectorAll('.carousel-item');
         let currentSlide = 0;
 
-        function showSlide(n) {
-            slides.forEach((slide) => {
-                slide.style.display = 'none';
+        const showSlide = (index) => {
+            slides.forEach((slide, i) => {
+                if (i === index) {
+                    slide.style.display = 'block';
+                } else {
+                    slide.style.display = 'none';
+                }
             });
-            slides[n].style.display = 'block';
-        }
+            currentSlide = index;
+        };
 
-        function nextSlide() {
-            currentSlide++;
-            if (currentSlide >= slides.length) {
-                currentSlide = 0;
-            }
+        const showNextSlide = () => {
+            currentSlide = (currentSlide + 1) % slides.length;
             showSlide(currentSlide);
-        }
+        };
 
-        function prevSlide() {
-            currentSlide--;
-            if (currentSlide < 0) {
-                currentSlide = slides.length - 1;
-            }
+        const showPrevSlide = () => {
+            currentSlide = (currentSlide - 1 + slides.length) % slides.length;
             showSlide(currentSlide);
-        }
+        };
 
+        // Show initial slide
         showSlide(currentSlide);
+
+        // Add event listeners to navigation buttons
+        prevButton.addEventListener('click', showPrevSlide);
+        nextButton.addEventListener('click', showNextSlide);
+
 
         function redirectToChangePost(id) {
             window.location.href = `../../app/post/${id}/update/`;

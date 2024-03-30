@@ -31,18 +31,29 @@
                 <div class="px-6 py-4 border-b border-gray-200">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center">
+
                         </div>
                     </div>
                     <div class="px-6 py-4 ">
                         <div class="flex justify-center">
-                            {% for image in post.images.all %}
-
-
-                                <a href="{% url "post_detail" post.id %}"><img
-                                        class="inline-block mx-auto w-64 h-64 object-cover rounded-lg post-thumbnail"
-                                        src="{{ image.images.url }}" alt="Post Image {{ user_post.user.username }}"
-                                        data-post-id="{{ post.id }}"></a>
-                            {% endfor %}
+                            <div class="carousel relative" id="carousel_{{ post.id }}">
+                                <div class="carousel-inner">
+                                    {% for image in post.images.all %}
+                                        <div class="carousel-item">
+                                            <a href="{% url "post_detail" post.id %}">
+                                                <img src="{{ image.images.url }}"
+                                                     alt="Post Image {{ post.owner.username }} {{ forloop.counter }}">
+                                            </a>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <button class="carousel-prev absolute top-1/2 left-4 transform -translate-y-1/2 text-red-800 rounded-full px-3 py-1 focus:outline-none">
+                                    &#10094;
+                                </button>
+                                <button class="carousel-next absolute top-1/2 right-4 transform -translate-y-1/2 text-red-800 rounded-full px-3 py-1 focus:outline-none">
+                                    &#10095;
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -51,4 +62,43 @@
         {% endfor %}
     {% endif %}
 </div>
+    <script>
+
+        // Carousel functionality
+        const carousels = document.querySelectorAll('.carousel');
+        carousels.forEach((carousel) => {
+            const prevButton = carousel.querySelector('.carousel-prev');
+            const nextButton = carousel.querySelector('.carousel-next');
+            const slides = carousel.querySelectorAll('.carousel-item');
+            let currentSlide = 0;
+
+            const showSlide = (index) => {
+                slides.forEach((slide, i) => {
+                    if (i === index) {
+                        slide.style.display = 'block';
+                    } else {
+                        slide.style.display = 'none';
+                    }
+                });
+                currentSlide = index;
+            };
+
+            const showNextSlide = () => {
+                currentSlide = (currentSlide + 1) % slides.length;
+                showSlide(currentSlide);
+            };
+
+            const showPrevSlide = () => {
+                currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+                showSlide(currentSlide);
+            };
+
+            // Show initial slide
+            showSlide(currentSlide);
+
+            // Add event listeners to navigation buttons
+            prevButton.addEventListener('click', showPrevSlide);
+            nextButton.addEventListener('click', showNextSlide);
+        });
+    </script>
 {% endblock %}
