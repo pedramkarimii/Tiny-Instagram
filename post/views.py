@@ -103,7 +103,9 @@ class PostDetailView(MustBeLogingCustomView, DetailView):
         """
         Returns the post object for the detail view.
         """
-        return get_object_or_404(Post, pk=self.kwargs.get('pk'))
+
+        # get_post = Post.objects.filter(pk=self.kwargs.get('pk'), is_deleted=False).exists()
+        return get_object_or_404(Post, pk=self.kwargs.get('pk'), is_active=True)
 
     def get_context_data(self, **kwargs):
         """
@@ -114,7 +116,7 @@ class PostDetailView(MustBeLogingCustomView, DetailView):
         is_following = False  # Default value
 
         if self.request.user.is_authenticated:
-            if self.request.user != post.owner.user:
+            if self.request.user.pk != post.owner.user.pk:
                 is_following = Relation.objects.filter(
                     followers=self.request.user,
                     following=post.owner.user,
@@ -142,6 +144,41 @@ class PostDetailView(MustBeLogingCustomView, DetailView):
                                              'pk': post.pk}))
         else:
             return self.render_to_response(self.get_context_data(form=form))
+
+
+class DeleteCommentView(MustBeLogingCustomView):
+    """
+    View for deleting a comment.
+    """
+    http_method_names = ['post']
+
+    def setup(self, request, *args, **kwargs):
+        """
+        Initializes the comment_id, request_user, and next_page_post_detail.
+        """
+        self.comment_id = get_object_or_404(Comment, pk=kwargs.get('pk'))  # noqa
+        self.request_user = request.user  # noqa
+        self.get_comment = Comment.objects.filter(pk=self.comment_id.pk)  # noqa
+        self.next_page_post_detail = reverse_lazy('post_detail', kwargs={'pk': self.comment_id.post.pk})  # noqa
+        return super().setup(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        """
+        Handles the deletion of a comment.
+        """
+        comment = self.comment_id
+
+        if comment.owner.user == self.request_user:
+            self.get_comment.delete()
+            if comment.is_reply:
+                self.get_comment.delete()
+                messages.success(request, "You have deleted a reply")
+            else:
+                messages.success(request, "You have deleted a comment")
+            return redirect(self.next_page_post_detail)
+        else:
+            messages.error(request, "You can't delete this comment")
+            return redirect(self.next_page_post_detail)
 
 
 class ReplyCommentView(MustBeLogingCustomView):
@@ -302,7 +339,6 @@ class FollowUserView(MustBeLogingCustomView):
         Initializes necessary attributes for the view.
         Sets up the user instance to follow/unfollow and defines the next page URL.
         """
-        # self.post_instance = get_object_or_404(Post, pk=kwargs['pk'], is_active=True)  # noqa
         self.users_instance = get_object_or_404(User, pk=kwargs['pk'], is_active=True)  # noqa
         self.user = request.user  # noqa
         self.next_page_post_detail = reverse_lazy('post_detail', kwargs={'pk': kwargs['pk']})  # noqa
@@ -387,6 +423,7 @@ class DeletePostView(MustBeLogingCustomView):
         self.template_delete_post = 'post/delete_post.html'  # noqa
         self.next_page_show_post = reverse_lazy('show_post', kwargs={'pk': kwargs['pk']})  # noqa
         self.post_instance = get_object_or_404(Post, pk=kwargs['pk'])  # noqa
+        self.get_post = Post.objects.filter(pk=self.post_instance.pk)  # noqa
         return super().setup(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
@@ -396,7 +433,7 @@ class DeletePostView(MustBeLogingCustomView):
     def post(self, request, *args, **kwargs):
         """Handle POST request to delete the post."""
         if self.post_instance:
-            Post.objects.filter(pk=self.post_instance.pk).delete()
+            self.get_post.delete()
             messages.success(request, 'Post deleted successfully!')
             return redirect(self.next_page_show_post)
         else:
