@@ -6,7 +6,7 @@ from django.urls import reverse_lazy
 from account.models import User, Profile, Relation
 from core.mixin import HttpsOptionNotLogoutMixin as MustBeLogingCustomView
 from post.forms import UpdatePostForm, CreatCommentForm
-from post.models import Post, Vote, Image
+from post.models import Post, Vote, Image, Comment
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 
@@ -17,10 +17,7 @@ class HomePostView(MustBeLogingCustomView):
 
     Attributes:
     - template_posts (str): The template for rendering posts.
-    - form_class (CreatCommentForm): The form class for creating comments.
     - form_class_search (SearchForm): The form class for searching posts.
-    - next_page_show_post (reverse_lazy): The URL pattern for displaying a specific post.
-    - user (User): The current user.
     - posts (QuerySet): The queryset of posts filtered by the current user and not deleted.
     """
     http_method_names = ['get', 'post']
@@ -28,14 +25,12 @@ class HomePostView(MustBeLogingCustomView):
     def setup(self, request, *args, **kwargs):
         print(kwargs)
         """
-        Initializes form classes, template, and queryset of posts.
+        Initializes form_class_search, template_posts, and queryset of posts.
         """
         self.template_posts = 'post/posts.html'  # noqa
-        self.form_class = CreatCommentForm  # noqa
         self.form_class_search = SearchForm  # noqa
-        self.next_page_show_post = reverse_lazy('show_post', kwargs={'pk': kwargs['pk']})  # noqa
-        self.user = request.user  # noqa
-        self.posts = Post.objects.filter(owner=self.user.profile, is_deleted=False)  # noqa
+        self.request_user_profile = request.user.profile  # noqa
+        self.posts = Post.objects.filter(owner=self.request_user_profile, is_deleted=False)  # noqa
 
         return super().setup(request, *args, **kwargs)
 
@@ -52,22 +47,7 @@ class HomePostView(MustBeLogingCustomView):
             ).filter(similarity__gt=0.1).order_by('-similarity')
 
         return render(request, self.template_posts,
-                      {'posts': self.posts, 'form': self.form_class(), 'form_search': form_search})
-
-    def post(self, request, *args, **kwargs):
-        """
-        Handles POST requests for creating comments.
-        """
-        form = self.form_class(request.POST)
-        if form.is_valid():
-            post_instance = get_object_or_404(Post, pk=kwargs['pk'], owner=self.user.profile)
-            comment = form.save(commit=False)
-            comment.owner = request.user.profile
-            comment.post = post_instance
-            comment.save()
-            messages.success(request, "You have created a new comment")
-            return redirect(self.next_page_show_post)
-        return render(request, self.template_posts, {'posts': self.posts, 'form': form})
+                      {'posts': self.posts, 'form_search': form_search})
 
 
 class Explorer(MustBeLogingCustomView):
@@ -82,12 +62,10 @@ class Explorer(MustBeLogingCustomView):
     http_method_names = ['get', 'post']
 
     def setup(self, request, *args, **kwargs):
-        """Initialize the template_explorer, form_class_search, next_page_home, next_page_explorer, posts."""
+        """Initialize the template_explorer, form_class_search, posts."""
         self.template_explorer = 'explorer/explorer.html'  # noqa
         self.form_class_search = SearchForm  # noqa
-        self.next_page_home = reverse_lazy('home')  # noqa
         self.posts = Post.objects.filter(owner=request.user.profile)  # noqa
-        self.next_page_explorer = reverse_lazy('explorer')  # noqa
         return super().setup(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
@@ -133,7 +111,19 @@ class PostDetailView(MustBeLogingCustomView, DetailView):
         Adds the comment form to the context data.
         """
         context = super().get_context_data(**kwargs)
+        post = self.get_object()  # Retrieve the post object
+        is_following = False  # Default value
+
+        if self.request.user.is_authenticated:
+            if self.request.user != post.owner.user:
+                is_following = Relation.objects.filter(
+                    followers=self.request.user,
+                    following=post.owner.user,
+                    is_follow=True
+                ).exists()
+
         context['form'] = CreatCommentForm()
+        context['is_following'] = is_following
         return context
 
     def post(self, request, *args, **kwargs):
@@ -141,18 +131,55 @@ class PostDetailView(MustBeLogingCustomView, DetailView):
         Handles the submission of the comment form.
         """
         post = self.get_object()
-
         form = CreatCommentForm(request.POST)
         if form.is_valid():
             comment = form.save(commit=False)
             comment.owner = request.user.profile
             comment.post = post
             comment.save()
+            messages.success(request, "You have created a new comment")
             return redirect(reverse_lazy('post_detail',
                                          kwargs={
                                              'pk': post.pk}))
         else:
             return self.render_to_response(self.get_context_data(form=form))
+
+
+class ReplyCommentView(MustBeLogingCustomView):
+    """
+    View for replying to a comment.
+    """
+    http_method_names = ['post']
+
+    def setup(self, request, *args, **kwargs):
+        """
+        Initializes the parent_comment, form_class, request_post, request_user_profile, and next_page_post_detail.
+        """
+        self.parent_comment = get_object_or_404(Comment, pk=kwargs.get('pk'))  # noqa
+        self.form_class = CreatCommentForm  # noqa
+        self.request_post = request.POST  # noqa
+        self.request_user_profile = request.user.profile  # noqa
+        self.next_page_post_detail = reverse_lazy('post_detail', kwargs={'pk': self.parent_comment.post.pk})  # noqa
+        return super().setup(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        """
+        Handles the submission of the reply form.
+        """
+        parent_comment = self.parent_comment
+        form = self.form_class(self.request_post)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.owner = self.request_user_profile
+            comment.post = parent_comment.post
+            comment.reply = parent_comment
+            comment.is_reply = True
+            comment.save()
+            messages.success(request, "You have replied to a comment")
+            return redirect(self.next_page_post_detail)
+        else:
+            messages.error(request, "Failed to submit reply. Please check the form.")
+            return redirect(self.next_page_post_detail)
 
 
 class CreatePostView(MustBeLogingCustomView):
