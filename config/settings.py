@@ -1,20 +1,15 @@
 from pathlib import Path
-
 import os
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure--^$0i-n0hnkdxdfwb)iua5&3hw)sxck2i69=bu7h)_)_z!n^nl'
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = []
 
-# Application definition
-
+# Application
 INSTALLED_APPS = [
     'jazzmin',  # Third-party App
     'django.contrib.admin',
@@ -64,13 +59,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# Database
-# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
-
-"""
-Configures the default database connection to use PostgreSQL.
-Specifies the database name, username, password, host, and port.
-"""
+# Configures the default database connection to use PostgreSQL.
+# Specifies the database name, username, password, host, and port.
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -83,65 +73,16 @@ DATABASES = {
     }
 }
 
-"""
-Configures the default cache backend to use Redis.
-Specifies the location of the Redis server (in this case, localhost on port 6379).
-"""
+# Configures the default cache backend to use Redis.
+# Specifies the location of the Redis server (in this case, localhost on port 6379).
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
         "LOCATION": "redis://127.0.0.1:6379",
     }
 }
-SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
 
-# Password validation
-# https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
-
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
-]
-
-# Internationalization
-# https://docs.djangoproject.com/en/5.0/topics/i18n/
-
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'Asia/Tehran'
-
-USE_I18N = True
-
-USE_TZ = True
-
-LOGIN_REDIRECT_URL = "/"
-AUTH_USER_MODEL = 'account.User'
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.0/howto/static-files/
-
-STATIC_URL = 'static/'
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
-
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# AUTHENTICATION_BACKENDS = [
-#     'django.contrib.auth.backends.ModelBackend',
-#     'account.authenticate.EmailAuthBackend',
-# ]
+# Configures the default template engine to use Django's built-in template engine.
 CKEDITOR_CONFIGS = {
     'default': {
         'toolbar': 'full',
@@ -150,16 +91,42 @@ CKEDITOR_CONFIGS = {
     },
 }
 
+SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
+
+# Password validation
+AUTH_PASSWORD_VALIDATORS = [
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator', },
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', },
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator', },
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator', },
+]
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'app.account.authenticate.EmailAuthBackend',
+]
+
+# Internationalization
+LANGUAGE_CODE = 'en-us'
+TIME_ZONE = 'Asia/Tehran'
+USE_I18N = True
+USE_TZ = True
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGIN_REDIRECT_URL = "/"
+AUTH_USER_MODEL = 'account.User'
+
+STATIC_URL = 'static/'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# LOG_FILE_PATH = os.path.join(BASE_DIR, 'django_errors.log')
 LOG_FILE_PATH = '/app/core/info.log'
 
-"""
-Configures email settings for sending emails via SMTP using Gmail.
-Specifies the SMTP server host, port, username, password, and TLS settings.
-Defines the default sender email address.
-"""
+# Configures email settings for sending emails via SMTP using Gmail.
+# Specifies the SMTP server host, port, username, password, and TLS settings.
+# Defines the default sender email address.
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_HOST_USER = 'pedram.9060@gmail.com'
