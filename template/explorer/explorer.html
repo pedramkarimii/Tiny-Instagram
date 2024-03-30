@@ -26,11 +26,11 @@
             </form>
         </div>
         <div class="max-w-7xl mx-auto grid grid-cols-3 gap-4 ">
-{% for post in post_search %}
-                <div class="grid bg-gray-300 shadow-lg rounded-lg  mb-8 mt-4 ">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center">
+        {% for post in post_search %}
+            <div class="grid bg-gray-300 shadow-lg rounded-lg  mb-8 mt-4 ">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
                         </div>
                     </div>
                     <div class="px-6 py-4 ">
@@ -38,17 +38,17 @@
                             {% for image in post.images.all %}
 
 
-                            <a href="{% url "post_detail" post.id %}"><img
-                                    class="inline-block mx-auto w-64 h-64 object-cover rounded-lg post-thumbnail"
-                                    src="{{  image.images.url }}" alt="Post Image {{ user_post.user.username }}"
-                                    data-post-id="{{ post.id }}"></a>
-                                {% endfor %}
+                                <a href="{% url "post_detail" post.id %}"><img
+                                        class="inline-block mx-auto w-64 h-64 object-cover rounded-lg post-thumbnail"
+                                        src="{{ image.images.url }}" alt="Post Image {{ user_post.user.username }}"
+                                        data-post-id="{{ post.id }}"></a>
+                            {% endfor %}
                         </div>
                     </div>
                 </div>
-                </div>
+            </div>
 
-            {% endfor %}
+        {% endfor %}
     {% endif %}
-    </div>
+</div>
 {% endblock %}
