@@ -1,5 +1,5 @@
 from django.urls import path
-from account.views import UserLoginView, UserLogoutView, UserRegisterView, UserRegistrationVerifyCodeView, \
+from app.account.views import UserLoginView, UserLogoutView, UserRegisterView, UserRegistrationVerifyCodeView, \
     UserChangeView, ChangePasswordView, CreateProfileView, ProfileDetailView, DeleteProfileView, LoginVerifyCodeView, \
     DeleteUserView, SuccessLoginView, UserPasswordResetView, UserPasswordResetDoneView, UserPasswordResetConfirmView, \
     UserPasswordResetCompleteView, UserLoginEmailView, LoginVerifyCodeEmailView

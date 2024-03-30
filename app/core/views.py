@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import View
-from account.models import User
+from app.account.models import User
 from .forms import ContactForm
 
 

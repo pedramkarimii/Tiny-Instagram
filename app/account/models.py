@@ -1,5 +1,5 @@
 from django.db import models
-from core.mixin import DeleteManagerMixin
+from app.core.mixin import DeleteManagerMixin
 from .mixin import BaseModelUserMixin
 from ckeditor.fields import RichTextField
 from django.core.validators import RegexValidator

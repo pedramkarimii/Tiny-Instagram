@@ -1,7 +1,7 @@
 from django.urls import path
 from django.views.generic import TemplateView
 
-from core.views import ContactUsView
+from app.core.views import ContactUsView
 
 """
 Defines URL patterns for the home, about us, and contact us pages.

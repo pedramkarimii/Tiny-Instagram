@@ -1,6 +1,8 @@
 from django.apps import AppConfig
 
 
-class CoreConfig(AppConfig):
+class PostConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'core'
+    name = 'app.post'
+    def ready(self):
+        pass

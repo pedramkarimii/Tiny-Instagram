@@ -1,7 +1,7 @@
 from ckeditor.fields import RichTextField
 from django.db import models
-from account.models import Profile, User
-from core.mixin import DeleteManagerMixin, image_upload_path_mixin
+from app.account.models import Profile, User
+from app.core.mixin import DeleteManagerMixin, image_upload_path_mixin
 
 
 class Post(models.Model):

@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from account.models import OptCode
+from app.account.models import OptCode
 from datetime import datetime, timedelta
 import pytz
 

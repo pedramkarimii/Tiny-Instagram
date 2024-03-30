@@ -13,9 +13,9 @@ These URL patterns define the structure of the web application and route request
 """
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("", include("account.urls")),
-    path("", include("post.urls")),
-    path("", include("core.urls")),
+    path("", include("app.account.urls")),
+    path("", include("app.post.urls")),
+    path("", include("app.core.urls")),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

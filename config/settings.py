@@ -24,9 +24,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     # Local App
-    "account.apps.AccountConfig",
-    "core.apps.CoreConfig",
-    "post.apps.PostConfig",
+    "app.account.apps.AccountConfig",
+    "app.core.apps.CoreConfig",
+    "app.post.apps.PostConfig",
     # Third-party App
     'ckeditor',
 
@@ -153,7 +153,7 @@ CKEDITOR_CONFIGS = {
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # LOG_FILE_PATH = os.path.join(BASE_DIR, 'django_errors.log')
-LOG_FILE_PATH = '/home/pedram/Desktop/project django/core/info.log'
+LOG_FILE_PATH = '/app/core/info.log'
 
 """
 Configures email settings for sending emails via SMTP using Gmail.

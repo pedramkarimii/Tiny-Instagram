@@ -1,7 +1,7 @@
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
-from account.managers import UserManager
+from app.account.managers import UserManager
 from django.db import models
-from core.mixin import DeleteManagerMixin
+from app.core.mixin import DeleteManagerMixin
 
 
 class BaseModelUserMixin(AbstractBaseUser, PermissionsMixin):

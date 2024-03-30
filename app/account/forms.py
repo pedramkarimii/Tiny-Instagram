@@ -3,7 +3,7 @@ from django.contrib.auth.hashers import check_password
 from django.core.exceptions import ValidationError
 from django.forms.widgets import TextInput, Select
 from ckeditor.widgets import CKEditorWidget
-from account.models import User, Profile, OptCode
+from app.account.models import User, Profile, OptCode
 from django import forms
 import re
 

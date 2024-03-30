@@ -1,12 +1,12 @@
 from django.contrib.postgres.search import TrigramSimilarity
 from django.views.generic import DetailView
-from post.forms import SearchForm
+from app.post.forms import SearchForm
 from django.core.exceptions import ObjectDoesNotExist
 from django.urls import reverse_lazy
-from account.models import User, Profile, Relation
-from core.mixin import HttpsOptionNotLogoutMixin as MustBeLogingCustomView
-from post.forms import UpdatePostForm, CreatCommentForm
-from post.models import Post, Vote, Image, Comment
+from app.account.models import User, Profile, Relation
+from app.core.mixin import HttpsOptionNotLogoutMixin as MustBeLogingCustomView
+from app.post.forms import UpdatePostForm, CreatCommentForm
+from app.post.models import Post, Vote, Image, Comment
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 

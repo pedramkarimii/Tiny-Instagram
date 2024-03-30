@@ -10,12 +10,12 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.generic import DetailView, DeleteView
-from core.mixin import HttpsOptionLoginMixin as MustBeLogoutCustomView, \
+from app.core.mixin import HttpsOptionLoginMixin as MustBeLogoutCustomView, \
     HttpsOptionNotLogoutMixin as MustBeLogingCustomView
 from .forms import UserRegistrationForm, VerifyCodeForm, ProfileChangeOrCreationForm, CustomUserChangeForm, \
     ChangePasswordForm
 import random
-from account.utils import send_otp_code
+from app.account.utils import send_otp_code
 from .models import OptCode, User, Profile, Relation
 from django.contrib.auth.views import LoginView, PasswordResetView, PasswordResetDoneView, PasswordResetConfirmView, \
     PasswordResetCompleteView

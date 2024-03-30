@@ -1,5 +1,5 @@
 from django.contrib import admin
-from account.models import User, Profile, OptCode, Relation
+from app.account.models import User, Profile, OptCode, Relation
 from .forms import UserChangeForm, ProfileForm
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
