@@ -23,7 +23,6 @@ class HomePostView(MustBeLogingCustomView):
     http_method_names = ['get', 'post']
 
     def setup(self, request, *args, **kwargs):
-        print(kwargs)
         """
         Initializes form_class_search, template_posts, and queryset of posts.
         """
