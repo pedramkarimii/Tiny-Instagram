@@ -128,10 +128,12 @@ class Comment(models.Model):
     - reply: ForeignKey to self representing a reply to another comment (optional).
     - is_reply: BooleanField indicating whether the comment is a reply to another comment.
     - comments: RichTextField containing the content of the comment.
+    - is_active: BooleanField indicating whether the comment is active. (default: True)
     - is_deleted: BooleanField indicating whether the comment has been deleted.
     - delete_time: DateTimeField indicating the time when the comment was deleted.
     - create_time: DateTimeField indicating the time when the comment was created.
     - update_time: DateTimeField indicating the time when the comment was last updated.
+    - objects: Custom manager for soft deletion.
 
     Methods:
     - __str__: Returns a string representation of the Comment object.
@@ -150,10 +152,12 @@ class Comment(models.Model):
                               null=True)
     is_reply = models.BooleanField(default=False)
     comments = RichTextField()
+    is_active = models.BooleanField(default=True)
     is_deleted = models.BooleanField(default=False)
     delete_time = models.DateTimeField(auto_now=True, editable=False)
     create_time = models.DateTimeField(auto_now_add=True, editable=False)
     update_time = models.DateTimeField(auto_now=True, editable=False)
+    objects = DeleteManagerMixin()  # Assuming UserManager is a custom manager < soft delete >
 
     def __str__(self):
         return f'{self.owner} - {self.post} - {self.update_time}'
@@ -163,9 +167,6 @@ class Comment(models.Model):
         verbose_name = 'Comment'
         verbose_name_plural = 'Comments'
         get_latest_by = '-create_time'
-        constraints = [
-            models.UniqueConstraint(fields=['owner', 'post', 'comments'], name='unique_owner_post_comments')
-        ]
         indexes = [
             models.Index(fields=['owner', 'post'], name='index_owner_post_comments')
         ]
