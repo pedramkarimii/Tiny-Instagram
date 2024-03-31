@@ -1,80 +1,56 @@
-from django.test import TestCase
 from django.contrib.auth import get_user_model
-from .models import Post, Comment, Vote
+from django.test import TestCase
+from app.account.models import Profile
+from .models import Post, Image, Comment, Vote, CommentLike
 
 User = get_user_model()
 
 
 class ModelsTestCase(TestCase):
     def setUp(self):
-        # Create User Profiles
-        self.user1 = User.objects.create(username='pedramkarimi', email='pedram.9060@gmail.com',
-                                         phone_number='09128355747')
-        self.user2 = User.objects.create_user(username="AliBaghani", email="ali@gmail.com", phone_number='09101234567')
-        self.user3 = User.objects.create_user(username="HamidBalaghi", email="hamid@gmail.com",
-                                              phone_number='09101234500')
+        """Setting up initial data for testing"""
+        self.user = User.objects.create(username='pedramkarimi', email='pedram.9060@gmail.com',
+                                        phone_number='09128355747')
+        self.profile = Profile.objects.create(user=self.user, full_name='Pedram Karimi', name='pedram',
+                                              last_name='karimi',
+                                              gender='Female', age=30, bio='Hi',
+                                              profile_picture='profile_picture/2024/03/17/d63d11b6-2ebc-46ea'
+                                                              '-9384-0a776f97e278_1pMrWIo.jpeg')
+        self.post = Post.objects.create(owner=self.profile, body="Test Body", title="Test Title")
+        self.image = Image.objects.create(post_image=self.post, images="test_image.jpg")
+        self.comment = Comment.objects.create(owner=self.profile, post=self.post, comments="Test Comment")
+        self.vote = Vote.objects.create(user=self.user, post=self.post)
+        self.comment_like = CommentLike.objects.create(user=self.user, comment=self.comment)
 
-        # Create Posts
-        self.post1 = Post.objects.create(owner=self.user1.profile, title="first post",
-                                         body="pedram")
-        self.post2 = Post.objects.create(owner=self.user2.profile, title="hi",
-                                         body="hi")
-        self.post3 = Post.objects.create(owner=self.user3.profile, title="first post",
-                                         body="hamid")
+    def test_post_model(self):
+        """Test if post model attributes are correctly set"""
+        self.assertEqual(self.post.owner, self.profile)
+        self.assertEqual(self.post.body, "Test Body")
+        self.assertEqual(self.post.title, "Test Title")
+        self.assertFalse(self.post.is_deleted)
+        self.assertTrue(self.post.is_active)
 
-        # Add Comments
-        # self.comment1_post1 = Comment.objects.create(owner=self.user2.profile, post=self.post1,
-        #                                              comments="First comment on post 1.")
-        # self.comment2_post1 = Comment.objects.create(owner=self.user3.profile, post=self.post1,
-        #                                              comments="Second comment on post 1.", reply=self.comment1_post1)
-        # self.comment1_post2 = Comment.objects.create(owner=self.user1.profile, post=self.post2,
-        #                                              comments="First comment on post 2.")
-        # self.comment2_post2 = Comment.objects.create(owner=self.user3.profile, post=self.post2,
-        #                                              comments="Second comment on post 2.", reply=self.comment1_post2)
-        # self.comment1_post3 = Comment.objects.create(owner=self.user1.profile, post=self.post3,
-        #                                              comments="First comment on post 3.")
-        # self.comment2_post3 = Comment.objects.create(owner=self.user2.profile, post=self.post3,
-        #                                              comments="Second comment on post 3.", reply=self.comment1_post3)
+    def test_image_model(self):
+        """Test if image model attributes are correctly set"""
+        self.assertEqual(self.image.post_image, self.post)
+        self.assertEqual(self.image.images, "test_image.jpg")
+        self.assertFalse(self.image.is_deleted)
+        self.assertTrue(self.image.is_active)
 
-        # Add Votes
-        self.vote1_post1 = Vote.objects.create(user=self.user2, post=self.post1)
-        self.vote2_post1 = Vote.objects.create(user=self.user3, post=self.post1)
-        self.vote3_post1 = Vote.objects.create(user=self.user1, post=self.post1)
-        self.vote1_post2 = Vote.objects.create(user=self.user1, post=self.post2)
-        self.vote2_post2 = Vote.objects.create(user=self.user2, post=self.post2)
-        self.vote3_post2 = Vote.objects.create(user=self.user3, post=self.post2)
-        self.vote1_post3 = Vote.objects.create(user=self.user3, post=self.post3)
-        self.vote2_post3 = Vote.objects.create(user=self.user1, post=self.post3)
-        self.vote3_post3 = Vote.objects.create(user=self.user2, post=self.post3)
+    def test_comment_model(self):
+        """Test if comment model attributes are correctly set"""
+        self.assertEqual(self.comment.owner, self.profile)
+        self.assertEqual(self.comment.post, self.post)
+        self.assertEqual(self.comment.comments, "Test Comment")
+        self.assertTrue(self.comment.is_active)
+        self.assertFalse(self.comment.is_deleted)
 
-    def test_posts_and_likes(self):
-        # List of all posts with their titles and the number of likes each post has
-        posts_likes = {post.title: post.likes_count() for post in Post.objects.all()}
-        self.assertEqual(posts_likes, {"First Post": 3, "Second Post": 3, "Third Post": 3})
+    def test_vote_model(self):
+        """Test if vote model attributes are correctly set"""
+        self.assertEqual(self.vote.user, self.user)
+        self.assertEqual(self.vote.post, self.post)
 
-    # def test_comments(self):
-    #     # List of all comments with the username of the commenter and the post title
-    #     comments_info = {comment.owner.user.username: comment.post.title for comment in Comment.objects.all()}
-    #     self.assertEqual(comments_info, {
-    #         "user2": "First Post",
-    #         "user3": "First Post",
-    #         "user1": "Second Post",
-    #         "user3": "Second Post",
-    #         "user1": "Third Post",
-    #         "user2": "Third Post"
-    #     })
-
-    def test_votes(self):
-        # List of all votes with the username of the voter and the post title
-        votes_info = {vote.user.username: vote.post.title for vote in Vote.objects.all()}
-        self.assertEqual(votes_info, {
-            "user2": "First Post",
-            "user3": "First Post",
-            "user1": "First Post",
-            "user1": "Second Post",
-            "user2": "Second Post",
-            "user3": "Second Post",
-            "user3": "Third Post",
-            "user1": "Third Post",
-            "user2": "Third Post"
-        })
+    def test_comment_like_model(self):
+        """Test if comment like model attributes are correctly set"""
+        self.assertEqual(self.comment_like.user, self.user)
+        self.assertEqual(self.comment_like.comment, self.comment)
