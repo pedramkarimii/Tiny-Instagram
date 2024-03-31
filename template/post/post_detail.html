@@ -25,14 +25,14 @@
 
 
                                 {% if request.user.profile.pk != post.owner.user.profile.pk and is_following %}
-                                    <form action="{% url 'follow_user' pk=post.owner.user.profile.pk %}" method="post">
+                                    <form action="{% url 'follow_user' user_id=post.owner.user.profile.pk post_id=post.id %}" method="post">
                                         {% csrf_token %}
                                         <button type="submit" class="text-red-600 font-semibold">
                                             Unfollow
                                         </button>
                                     </form>
                                 {% elif request.user.profile.pk != post.owner.user.profile.pk and is_following == False %}
-                                    <form action="{% url 'follow_user' pk=post.owner.user.profile.pk %}" method="post">
+                                    <form action="{% url 'follow_user' user_id=post.owner.user.profile.pk post_id=post.id %}" method="post">
                                         {% csrf_token %}
                                         <button type="submit" class="text-blue-600 font-semibold">
                                             Follow {{ post.owner.user.followers_count }}</button>

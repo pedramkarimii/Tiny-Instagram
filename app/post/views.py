@@ -339,16 +339,18 @@ class FollowUserView(MustBeLogingCustomView):
         Initializes necessary attributes for the view.
         Sets up the user instance to follow/unfollow and defines the next page URL.
         """
-        self.users_instance = get_object_or_404(User, pk=kwargs['pk'], is_active=True)  # noqa
+        user_id = kwargs['user_id']
+        post_id = kwargs['post_id']
+        self.users_instance = get_object_or_404(User, pk=user_id, is_active=True)  # noqa
         self.user = request.user  # noqa
-        self.next_page_post_detail = reverse_lazy('post_detail', kwargs={'pk': kwargs['pk']})  # noqa
+        self.next_page_post_detail = reverse_lazy('post_detail', kwargs={'pk': post_id})  # noqa
         return super().setup(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         """
         Handles the POST request for following or unfollowing a user.
 
-        Checks if a relation already exists between the users. If it exists, unfollows the user;otherwise,creates a new
+        Checks if a relation already exists between the users.If it exists, unfollows the user; otherwise, creates a new
         relation to follow the user.
         """
         relation = Relation.objects.filter(
@@ -357,19 +359,16 @@ class FollowUserView(MustBeLogingCustomView):
         )
         if relation.exists():
             relation.delete()
-            messages.success(request, f"You are unfollow this user {self.users_instance}.")
-            return redirect(self.next_page_post_detail)
-        elif not relation.exists():
+            messages.success(request, f"You are unfollowing {self.users_instance}.")
+        else:
             Relation.objects.create(
                 followers=self.user,
                 following=self.users_instance,
                 is_follow=True
             )
-            messages.success(request, f"You are now following {self.users_instance} .")
-            return redirect(self.next_page_post_detail)
-        else:
-            messages.error(request, "Failed to follow user")
-            return redirect(self.next_page_post_detail)
+            messages.success(request, f"You are now following {self.users_instance}.")
+
+        return redirect(self.next_page_post_detail)
 
 
 class PostLikeView(MustBeLogingCustomView):
