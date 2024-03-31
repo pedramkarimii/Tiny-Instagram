@@ -2,6 +2,7 @@ from ckeditor.widgets import CKEditorWidget
 from django import forms
 from django.forms.widgets import TextInput
 from .models import Post, Comment, Image
+from django.forms import ClearableFileInput
 
 
 class SearchForm(forms.Form):
@@ -12,13 +13,14 @@ class SearchForm(forms.Form):
 
 
 class ImageForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['images'].widget.attrs['multiple'] = True
+
     class Meta:
         model = Image
-        fields = ['post_image', 'images']
-        labels = {
-            'post_image': 'Owner',
-            'images': 'Image',
-        }
+        fields = ['images']
+        widgets = {'images': ClearableFileInput()}
 
 
 class UpdatePostForm(forms.ModelForm):
