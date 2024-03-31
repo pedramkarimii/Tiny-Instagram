@@ -459,6 +459,37 @@ class CommentLikeView(MustBeLogingCustomView):
             return redirect(self.next_page_explorer_post_id)
 
 
+class ReplyCommentLike(MustBeLogingCustomView):
+    """
+    A view for allowing users to like or unlike a reply to a comment.
+    """
+    http_method_names = ['get']
+
+    def setup(self, request, *args, **kwargs):
+        """
+        Initializes necessary attributes for the view.
+
+        Sets up the next page URL, user instance, and the reply comment instance.
+        """
+        self.next_page_explorer_post_id = reverse_lazy('post_detail', kwargs={'pk': kwargs['post_id']})
+        self.user = request.user
+        self.reply_comment = get_object_or_404(Comment, pk=kwargs['reply_comment_id'])
+        return super().setup(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        """ Handles the GET request for liking or unliking a reply to a comment.
+        Checks if the user has already liked the reply comment. If not, creates a new like. If yes, removes the like.
+        """
+        like = CommentLike.objects.filter(comment=self.reply_comment, user=self.user)
+        if not like.exists():
+            like.create(comment=self.reply_comment, user=self.user)
+            messages.success(request, f"You have liked this reply: {self.reply_comment.comments}")
+        else:
+            like.delete()
+            messages.success(request, f"You have removed your like from this reply: {self.reply_comment.comments}")
+        return redirect(self.next_page_explorer_post_id)
+
+
 class DeletePostView(MustBeLogingCustomView):
     """
     View for deleting a post.

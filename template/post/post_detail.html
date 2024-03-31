@@ -113,34 +113,37 @@
                                     </p>
                                 </div>
                                 <div class="comment-body px-6 py-4">
-                                    <form method="post" action="{% url 'reply_comment' comment.pk %} " style="display: inline;">
+                                    <form method="post" action="{% url 'reply_comment' comment.pk %} "
+                                          style="display: inline;">
                                         {% csrf_token %}
                                         <textarea name="comments" placeholder="Write a reply..." rows="1"
                                                   cols="50"></textarea>
                                         <button type="submit" class="text-blue-600">Reply</button>
                                     </form>
                                     {% if comment.owner.user == request.user %}
-                                        <form action="{% url 'delete_comment' comment.id %}" method="post" style="display: inline;">
+                                        <form action="{% url 'delete_comment' comment.id %}" method="post"
+                                              style="display: inline;">
                                             {% csrf_token %}
                                             <button type="submit" class="text-red-600">Delete</button>
                                         </form>
                                     {% endif %}
 
-    <a href="{% url 'like_comment' post_id=post.id comment_id=comment.id %}" style="display: inline;"
-           class="like-form">
-        {% csrf_token %}
-        <button type="submit"
-                class="like-btn text-green-600 font-semibold mr-4 flex items-center">
-            <svg class="w-6 h-6 mr-1" fill="none" stroke="currentColor"
-                 viewBox="0 0 24 24"
-                 xmlns="http://www.w3.org/2000/svg">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M5 13l4 4L19 7"></path>
-            </svg>
-            <span>Like</span>
-            <span class="text-sm pl-2 like-count">{{ comment.count_comment_like }}</span>
-        </button>
-    </a></div>
+                                    <a href="{% url 'like_comment' post_id=post.id comment_id=comment.id %}"
+                                       style="display: inline;"
+                                       class="like-form">
+                                        {% csrf_token %}
+                                        <button type="submit"
+                                                class="like-btn text-green-600 font-semibold mr-4 flex items-center">
+                                            <svg class="w-6 h-6 mr-1" fill="none" stroke="currentColor"
+                                                 viewBox="0 0 24 24"
+                                                 xmlns="http://www.w3.org/2000/svg">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                      d="M5 13l4 4L19 7"></path>
+                                            </svg>
+                                            <span>Like</span>
+                                            <span class="text-sm pl-2 like-count">{{ comment.count_comment_like }}</span>
+                                        </button>
+                                    </a></div>
                             {% endif %}
                         {% for reply in comment.reply_comments.all|dictsort:"create_time" %}
 
@@ -162,18 +165,36 @@
                                 </p>
                             </div>
                             <div class="comment-body px-6 py-4">
-                                <form method="post" action="{% url 'reply_comment' comment.pk %}" style="display: inline;">
+                                <form method="post" action="{% url 'reply_comment' comment.pk %}"
+                                      style="display: inline;">
                                     {% csrf_token %}
                                     <textarea name="comments" placeholder="Write a reply..." rows="1"
                                               cols="50"></textarea>
                                     <button type="submit" class="text-blue-600">Reply</button>
                                 </form>
                                 {% if reply.owner.user == request.user and reply.owner.user ==  reply.owner.user %}
-                                    <form action="{% url 'delete_comment' reply.id %}" method="post" style="display: inline;">
+                                    <form action="{% url 'delete_comment' reply.id %}" method="post"
+                                          style="display: inline;">
                                         {% csrf_token %}
                                         <button type="submit" class="text-red-600">Delete</button>
                                     </form>
                                 {% endif %}
+                                <a href="{% url 'like_reply_comment' post_id=post.id comment_id=comment.id reply_comment_id=reply.id %}"
+                                   style="display: inline;"
+                                   class="like-form">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                            class="like-btn text-green-600 font-semibold mr-4 flex items-center">
+                                        <svg class="w-6 h-6 mr-1" fill="none" stroke="currentColor"
+                                             viewBox="0 0 24 24"
+                                             xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                        <span>Like</span>
+                                        <span class="text-sm pl-2 like-count">{{ reply.comment_like.count }}</span>
+                                    </button>
+                                </a>
                             </div>
                         {% endfor %}
 
