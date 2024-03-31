@@ -171,6 +171,16 @@ class Comment(models.Model):
             models.Index(fields=['owner', 'post'], name='index_owner_post_comments')
         ]
 
+    def count_comment_like(self):
+        """
+        Defines the count_comment_like method of the Comment model.
+        This method returns the number of likes (votes) on the comment.
+
+        Returns:
+        - Integer representing the count of likes (votes) on the comment.
+        """
+        return self.comment_like.count()
+
 
 class Vote(models.Model):
     """
@@ -208,4 +218,39 @@ class Vote(models.Model):
         ]
         indexes = [
             models.Index(fields=['user', 'post'], name='index_user_post_vote')
+        ]
+
+
+class CommentLike(models.Model):
+    """
+    Defines the CommentLike model which represents likes made by users on comments.
+    Fields:
+    - user: ForeignKey to the User model representing the user who made the like.
+    - comment: ForeignKey to the Comment model representing the comment on which the like is made.
+    - create_time: DateTimeField indicating the time when the like was created.
+
+    Methods:
+    - __str__: Returns a string representation of the CommentLike object.
+
+    Meta:
+    - ordering: Specifies the default ordering of CommentLike objects.
+    - verbose_name: Sets the display name for a single CommentLike object.
+    - verbose_name_plural: Sets the display name for multiple CommentLike objects.
+    - get_latest_by: Specifies the field to use for retrieving the latest CommentLike object.
+    - indexes: Defines indexes for user and comment fields.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_comment_like')
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name='comment_like')
+    create_time = models.DateTimeField(auto_now_add=True, editable=False)
+
+    def __str__(self):
+        return f'{self.user} - {self.comment}'
+
+    class Meta:
+        ordering = ('-create_time',)
+        verbose_name = 'CommentLike'
+        verbose_name_plural = 'CommentLikes'
+        get_latest_by = '-create_time'
+        indexes = [
+            models.Index(fields=['user', 'comment'], name='index_user_comment_like')
         ]

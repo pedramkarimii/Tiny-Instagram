@@ -6,7 +6,7 @@ from django.urls import reverse_lazy
 from app.account.models import User, Profile, Relation
 from app.core.mixin import HttpsOptionNotLogoutMixin as MustBeLogingCustomView
 from app.post.forms import UpdatePostForm, CreatCommentForm
-from app.post.models import Post, Vote, Image, Comment
+from app.post.models import Post, Vote, Image, Comment, CommentLike
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 
@@ -271,6 +271,28 @@ class CreatePostView(MustBeLogingCustomView):
             messages.error(request, 'Failed to create post')
             return render(request, 'post/create_post.html', {'form': form})
 
+    # def post(self, request):
+    #     form = UpdatePostForm(request.POST, request.FILES)
+    #     form_image = ImageForm(request.FILES)
+    #
+    #     if form.is_valid() and form_image.is_valid():
+    #         post = form.save(commit=False)
+    #         post.owner = Profile.objects.get(user=request.user)
+    #         post.save()
+    #
+    #         if 'Image' in request.FILES:
+    #             for image in request.FILES.getlist('Image'):
+    #                 Image.objects.create(post_image=post, image=image)
+    #
+    #             messages.success(request, 'Post created successfully with image!')
+    #         else:
+    #             messages.success(request, 'Post created successfully!')
+    #
+    #         return redirect(reverse_lazy('create_post'))
+    #     else:
+    #         messages.error(request, 'Failed to create post')
+    #         return render(request, 'post/create_post.html', {'form': form})
+
 
 class UpdatePostView(MustBeLogingCustomView):
     """
@@ -402,6 +424,38 @@ class PostLikeView(MustBeLogingCustomView):
         else:
             like.delete()
             messages.success(request, f"You have removed your like from this post {self.post.title}")
+            return redirect(self.next_page_explorer_post_id)
+
+
+class CommentLikeView(MustBeLogingCustomView):
+    """
+    A view for allowing users to like or unlike a comment.
+    """
+    http_method_names = ['get']
+
+    def setup(self, request, *args, **kwargs):
+        """
+        Initializes necessary attributes for the view.
+
+        Sets up the next page URL, user instance, and the comment instance.
+        """
+        self.next_page_explorer_post_id = reverse_lazy('post_detail', kwargs={'pk': kwargs['post_id']})  # noqa
+        self.user = request.user  # noqa
+        self.comment = get_object_or_404(Comment, pk=kwargs['comment_id'])  # noqa
+        return super().setup(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        """ Handles the GET request for liking or unliking a comment.
+        Checks if the user has already liked the comment. If not, creates a new like. If yes, removes the like.
+        """
+        like = CommentLike.objects.filter(comment=self.comment, user=self.user)  # noqa
+        if not like.exists():
+            like.create(comment=self.comment, user=self.user)
+            messages.success(request, f"You have liked this comment {self.comment.comments}")
+            return redirect(self.next_page_explorer_post_id)
+        else:
+            like.delete()
+            messages.success(request, f"You have removed your like from this comment {self.comment.comments}")
             return redirect(self.next_page_explorer_post_id)
 
 

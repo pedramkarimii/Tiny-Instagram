@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Post, Comment, Vote, Image
+from .models import Post, Comment, Vote, Image, CommentLike
 
 
 class CommentInline(admin.TabularInline):
@@ -25,7 +25,6 @@ class VoteInline(admin.TabularInline):
         votes to posts.
     """
     model = Vote
-    can_delete = False
     verbose_name_plural = 'Vote'
     fk_name = 'post'
 
@@ -42,6 +41,23 @@ class VoteAdmin(admin.ModelAdmin):
     search_fields = ['user', 'post']
     ordering = ('-create_time',)
     row_id_fields = ('user', 'post',)
+
+
+class CommentLikeInline(admin.TabularInline):
+    model = CommentLike
+    verbose_name_plural = 'CommentLike'
+    fk_name = 'comment'
+    ordering = ('-create_time',)
+    row_id_fields = ('user', 'comment',)
+
+
+@admin.register(CommentLike)
+class CommentLikeAdmin(admin.ModelAdmin):
+    list_display = ('user', 'comment', 'create_time')
+    list_filter = ('user', 'comment')
+    search_fields = ['user', 'comment']
+    ordering = ('-create_time',)
+    row_id_fields = ('user', 'comment',)
 
 
 class ImageInline(admin.TabularInline):
@@ -101,3 +117,15 @@ class CommentAdmin(admin.ModelAdmin):
     search_fields = ['owner', 'post']
     ordering = ('-update_time', '-create_time')
     row_id_fields = ('owner', 'post', 'reply')
+    inlines = (CommentLikeInline,)
+
+    def get_inline_instances(self, request, obj=None):
+        """
+        Overrides the get_inline_instances method to conditionally display inline instances based on whether an
+            object is being edited.
+        If no object is provided, returns an empty list to prevent inline instances from being displayed.
+        Otherwise, calls the parent class's get_inline_instances method to retrieve inline instances.
+        """
+        if not obj:
+            return list()
+        return super(CommentAdmin, self).get_inline_instances(request, obj)
