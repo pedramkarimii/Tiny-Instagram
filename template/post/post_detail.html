@@ -15,28 +15,38 @@
                                                             alt="Profile Picture">
                             <div>
                                 <h2 class="text-lg font-semibold text-gray-800">
-                                    {{ post.owner.user.username }}
+                                    <a href="{% url 'profile_detail' pk=post.owner.user.profile.user_id %}">
+                                        {{ post.owner.user.username }} </a>
                                 </h2>
                                 <p class="text-sm text-gray-600">{{ post.owner.user.profile.bio | safe }}</p>
                             </div>
                         </div>
                         <div>
-                            <div>
+                            <div id="follow-container">
                                 {% if request.user.profile.pk != post.owner.user.profile.pk and is_following %}
-                                    <form action="{% url 'follow_user' user_id=post.owner.user.profile.pk post_id=post.id %}"
-                                          method="post">
-                                        {% csrf_token %}
-                                        <button type="submit" class="text-red-600 font-semibold">
-                                            Unfollow
-                                        </button>
-                                    </form>
+                                     <form class="follow-btn" id="unfollow-form"
+              action="{% url 'follow_user' user_id=post.owner.user.profile.pk post_id=post.id %}"
+              method="post">
+            {% csrf_token %}
+            <input type="hidden" name="user_id" value="{{ post.owner.user.profile.pk }}">
+            <input type="hidden" name="post_id" value="{{ post.id }}">
+            <button data-user-id="{{ post.owner.user.profile.pk }}" data-post-id="{{ post.id }}"
+                    type="submit" class="text-red-600 font-semibold">
+                Unfollow
+            </button>
+        </form>
                                 {% elif request.user.profile.pk != post.owner.user.profile.pk and is_following == False %}
-                                    <form action="{% url 'follow_user' user_id=post.owner.user.profile.pk post_id=post.id %}"
-                                          method="post">
-                                        {% csrf_token %}
-                                        <button type="submit" class="text-blue-600 font-semibold">
-                                            Follow {{ post.owner.user.followers_count }}</button>
-                                    </form>
+                                    <form class="follow-btn" id="follow-form"
+              action="{% url 'follow_user' user_id=post.owner.user.profile.pk post_id=post.id %}"
+              method="post">
+            {% csrf_token %}
+            <input type="hidden" name="user_id" value="{{ post.owner.user.profile.pk }}">
+            <input type="hidden" name="post_id" value="{{ post.id }}">
+            <button data-user-id="{{ post.owner.user.profile.pk }}" data-post-id="{{ post.id }}"
+                    type="submit" class="text-blue-600 font-semibold follow-count">
+                Follow {{ post.owner.user.followers_count }}
+            </button>
+        </form>
                                 {% endif %}
 
                             </div>
@@ -68,9 +78,10 @@
                     <p class="text-gray-800 mt-4 mb-4 leading-relaxed"><b>{{ post.title | safe }}</b></p>
                     <p class="text-gray-800 mt-4 mb-4 leading-relaxed">{{ post.body | safe }}</p>
                     <div class="flex justify-between items-center">
-                        <div class="flex">
+                        <div class="flex " id="like-posts-container">
                             <a href="{% url 'like_user' post.id %}" class="like-btn">
-                                <button class="text-blue-600 font-semibold mr-4 flex items-center">
+                                <button class="text-blue-600 font-semibold mr-4 flex items-center"
+                                        id="fetch-posts-button">
                                     <svg class="w-6 h-6 mr-1" fill="none" stroke="currentColor"
                                          viewBox="0 0 24 24"
                                          xmlns="http://www.w3.org/2000/svg">
@@ -101,8 +112,9 @@
                                 <div class="comment-item border-t border-gray-800">
                                 <div class="comment-body px-6 py-4">
                                     <p class="text-black-800">
-                                        <span class="comment-time">@{{ comment.owner }}</span>
-                                    </p>
+                                        <a href="{% url 'profile_detail' pk=comment.owner.user.profile.user_id %}">
+                                            <span class="comment-time"> &commat;{{ comment.owner }}</span>
+                                        </a></p>
                                     <p class="text-gray-800">
                                         <span class="comment-time">{{ comment.comments | safe }}</span>
                                     </p>
@@ -127,30 +139,34 @@
                                             <button type="submit" class="text-red-600">Delete</button>
                                         </form>
                                     {% endif %}
-
                                     <a href="{% url 'like_comment' post_id=post.id comment_id=comment.id %}"
+                                       class="CommentLike-link"
+                                       data-post-id="{{ post.id }}"
+                                       data-comment-id="{{ comment.id }}"
                                        style="display: inline;"
-                                       class="like-form">
-                                        {% csrf_token %}
+                                            {% csrf_token %}>
                                         <button type="submit"
-                                                class="like-btn text-green-600 font-semibold mr-4 flex items-center">
+                                                class="CommentLike-btn text-green-600 font-semibold mr-4 flex items-center">
                                             <svg class="w-6 h-6 mr-1" fill="none" stroke="currentColor"
-                                                 viewBox="0 0 24 24"
-                                                 xmlns="http://www.w3.org/2000/svg">
+                                                 viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                       d="M5 13l4 4L19 7"></path>
                                             </svg>
                                             <span>Like</span>
-                                            <span class="text-sm pl-2 like-count">{{ comment.count_comment_like }}</span>
+                                            <span class="text-sm pl-2 CommentLike-count">{{ comment.count_comment_like }}</span>
                                         </button>
-                                    </a></div>
+                                    </a>
+
+
+                                </div>
                             {% endif %}
                         {% for reply in comment.reply_comments.all|dictsort:"create_time" %}
 
                             <div
                                     class="ml-12 comment-body px-6 py-4">
                                 <p class="text-black-800">
-                                    @{{ reply.owner }}  </p>
+                                    <a href="{% url 'profile_detail' pk=reply.owner.user.profile.user_id %}">&commat;{{ reply.owner }} </a>
+                                </p>
                             </div>
 
                             <div class="ml-12 comment-body px-6 py-4">
@@ -180,21 +196,24 @@
                                     </form>
                                 {% endif %}
                                 <a href="{% url 'like_reply_comment' post_id=post.id comment_id=comment.id reply_comment_id=reply.id %}"
-                                   style="display: inline;"
-                                   class="like-form">
+                                   class="LikeReply-link"
+                                   data-post-id="{{ post.id }}"
+                                   data-comment-id="{{ comment.id }}"
+                                   data-reply-id="{{ reply.id }}"
+                                   style="display: inline;">
                                     {% csrf_token %}
-                                    <button type="submit"
-                                            class="like-btn text-green-600 font-semibold mr-4 flex items-center">
+                                    <button type="button"
+                                            class="LikeReply-btn text-green-600 font-semibold mr-4 flex items-center">
                                         <svg class="w-6 h-6 mr-1" fill="none" stroke="currentColor"
-                                             viewBox="0 0 24 24"
-                                             xmlns="http://www.w3.org/2000/svg">
+                                             viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                   d="M5 13l4 4L19 7"></path>
                                         </svg>
                                         <span>Like</span>
-                                        <span class="text-sm pl-2 like-count">{{ reply.comment_like.count }}</span>
+                                        <span class="text-sm pl-2 LikeReply-count">{{ reply.comment_like.count }}</span>
                                     </button>
                                 </a>
+
                             </div>
                         {% endfor %}
 
@@ -226,6 +245,161 @@
 
     {% endif %}
     </div>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            // Handle like button click
+            $('.like-btn').click(function (e) {
+                e.preventDefault();
+                var postId = $(this).data('post-id');
+                var likeCountElement = $(this).find('.like-count');
+
+                // AJAX request to like/unlike the post
+                $.ajax({
+                    type: "GET",
+                    url: "{% url 'like_user' post.id %}?post_id=" + postId,
+                    success: function (data) {
+                        // Update like count dynamically
+                        likeCountElement.text(data.likes_count);
+                        alert(data.message); // Display a message indicating like/unlike action
+                    },
+                    error: function (xhr, status, error) {
+                        console.error(xhr.responseText);
+                    }
+                });
+            });
+        });
+        $(document).ready(function () {
+            // Handle like reply button click
+            $('.LikeReply-link').click(function (e) {
+                e.preventDefault();  // Prevent default link behavior
+
+                var url = $(this).attr('href');  // Get the URL from the link's href attribute
+                var likeCountElement = $(this).find('.LikeReply-count');  // Select the like count element within the link
+
+                // AJAX request to like/unlike the reply comment
+                $.ajax({
+                    type: "GET",
+                    url: url,
+                    success: function (data) {
+                        if ('message' in data) {
+                            alert(data.message);  // Display a message indicating like/unlike action
+
+                            // Update like count based on action
+                            if (data.message.startsWith('You have liked')) {
+                                likeCountElement.text(parseInt(likeCountElement.text()) + 1); // Increment like count by 1
+                            } else if (data.message.startsWith('You have removed')) {
+                                likeCountElement.text(parseInt(likeCountElement.text()) - 1); // Decrement like count by 1
+                            }
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error(xhr.responseText);
+                    }
+                });
+            });
+        });
+
+
+        $(document).ready(function () {
+            // Handle like comment link click
+            $('.CommentLike-link').click(function (e) {
+                e.preventDefault();  // Prevent default link behavior
+
+                var url = $(this).attr('href');  // Get the URL from the anchor tag's href attribute
+                var likeCountElement = $(this).find('.CommentLike-count');  // Select the like count element within the anchor
+
+                // AJAX request to like/unlike the comment
+                $.ajax({
+                    type: "GET",
+                    url: url,
+                    dataType: 'json', // Expect JSON response
+                    success: function (data) {
+                        if ('message' in data) {
+                            alert(data.message);  // Display a message indicating like/unlike action
+
+                            // Update like count based on action
+                            if (data.message.startsWith('You have liked')) {
+                                likeCountElement.text(parseInt(likeCountElement.text()) + 1); // Increment like count by 1
+                            } else if (data.message.startsWith('You have removed')) {
+                                likeCountElement.text(parseInt(likeCountElement.text()) - 1); // Decrement like count by 1
+                            }
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('AJAX request failed:', error);
+                    }
+                });
+            });
+        });
+        {# $(document).ready(function () {#}
+        {#    // Handle follow/unfollow button click#}
+        {#    $('.follow-container').on('click', '.follow-btn', function (e) {#}
+        {#        e.preventDefault();#}
+        {#        var followBtn = $(this);#}
+        {#        var userId = followBtn.data('user-id');#}
+        {#        var postId = followBtn.data('post-id');#}
+        {#        var isFollowing = followBtn.hasClass('unfollow-btn');#}
+        {##}
+        {#        $.ajax({#}
+        {#            type: 'POST',#}
+        {#            url: '/follow_user/' + userId + '/', // Adjust this URL to match your follow/unfollow endpoint#}
+        {#            data: {#}
+        {#                'csrfmiddlewaretoken': $('input[name="csrfmiddlewaretoken"]').val(),#}
+        {#                'user_id': userId,#}
+        {#                'post_id': postId,#}
+        {#                'is_following': isFollowing ? 'False' : 'True' // Send whether user is currently following or not#}
+        {#            },#}
+        {#            dataType: 'json',#}
+        {#            success: function () {#}
+        {#                // Toggle button class for follow/unfollow#}
+        {#                followBtn.toggleClass('follow-btn unfollow-btn');#}
+        {#                // Update button text#}
+        {#                if (isFollowing) {#}
+        {#                    followBtn.text('Follow');#}
+        {#                    alert('You have unfollowed the user');#}
+        {#                } else {#}
+        {#                    followBtn.text('Unfollow');#}
+        {#                    alert('You are now following the user');#}
+        {#                }#}
+        {#            },#}
+        {#            error: function (xhr, status, error) {#}
+        {#                console.error(xhr.responseText);#}
+        {#            }#}
+        {#        });#}
+        {#    });#}
+$(document).ready(function () {
+    $('.follow-btn').submit(function (e) {
+        e.preventDefault();
+
+        var form = $(this);
+        var formData = form.serialize();
+
+        $.ajax({
+            type: form.attr('method'),
+            url: form.attr('action'),
+            data: formData,
+            dataType: 'json',
+            success: function (data) {
+                if (data.success) {
+                    var followButton = form.find('button');
+                    followButton.text(data.is_following ? 'Unfollow' : 'Follow');
+                    followButton.removeClass(data.is_following ? 'text-blue-600' : 'text-red-600');
+                    followButton.addClass(data.is_following ? 'text-red-600' : 'text-blue-600');
+                    $('.follow-count').text('Follow ' + data.followers_count);
+                } else {
+                    console.error('Failed to follow/unfollow user');
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('AJAX request failed:', error);
+            }
+        });
+    });
+});
+
+
+    </script>
+
     <script>
 
 
