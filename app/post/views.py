@@ -9,6 +9,7 @@ from app.post.forms import UpdatePostForm, CreatCommentForm
 from app.post.models import Post, Vote, Image, Comment, CommentLike
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
+from django.http import JsonResponse
 
 
 class HomePostView(MustBeLogingCustomView):
@@ -271,35 +272,11 @@ class CreatePostView(MustBeLogingCustomView):
             messages.error(request, 'Failed to create post')
             return render(request, 'post/create_post.html', {'form': form})
 
-    # def post(self, request):
-    #     form = UpdatePostForm(request.POST, request.FILES)
-    #     form_image = ImageForm(request.FILES)
-    #
-    #     if form.is_valid() and form_image.is_valid():
-    #         post = form.save(commit=False)
-    #         post.owner = Profile.objects.get(user=request.user)
-    #         post.save()
-    #
-    #         if 'Image' in request.FILES:
-    #             for image in request.FILES.getlist('Image'):
-    #                 Image.objects.create(post_image=post, image=image)
-    #
-    #             messages.success(request, 'Post created successfully with image!')
-    #         else:
-    #             messages.success(request, 'Post created successfully!')
-    #
-    #         return redirect(reverse_lazy('create_post'))
-    #     else:
-    #         messages.error(request, 'Failed to create post')
-    #         return render(request, 'post/create_post.html', {'form': form})
-
 
 class UpdatePostView(MustBeLogingCustomView):
     """
     View for updating a post.
     The UpdatePostView class handles both GET and POST requests for updating a post.
-    - The setup method initializes the view attributes including the template name, form class, files, user,
-        next page URL, and retrieves the post instance.
     - The get method renders the form for updating a post with the existing post data filled in.
     - The post method processes the form submission for updating a post.
     - If the form is valid, it updates the post with the new data, saves it, and redirects to the page displaying
@@ -310,7 +287,7 @@ class UpdatePostView(MustBeLogingCustomView):
 
     def setup(self, request, *args, **kwargs):
         """Initialize attributes for the template_update_post, form class, files, user,
-                   next_page_show_post, next_page_show_update_post and retrieve the post instance."""
+           next_page_show_post, next_page_show_update_post and retrieve the post instance."""
         self.template_update_post = 'post/update_post.html'  # noqa
         self.form_class = UpdatePostForm  # noqa
         self.request_files = request.FILES  # noqa
@@ -322,16 +299,10 @@ class UpdatePostView(MustBeLogingCustomView):
         return super().setup(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):  # noqa
-        """
-        Renders the form for updating a post.
-        """
         form = self.form_class(instance=self.post_instance)
         return render(request, self.template_update_post, {'form': form, 'post': self.post_instance})
 
     def post(self, request, *args, **kwargs):  # noqa
-        """
-        Processes the form submission for updating a post.
-        """
         form = self.form_class(self.request_post, self.request_files, instance=self.post_instance)
         if form.is_valid():
             posts = form.save(commit=False)
@@ -361,9 +332,10 @@ class FollowUserView(MustBeLogingCustomView):
         Initializes necessary attributes for the view.
         Sets up the user instance to follow/unfollow and defines the next page URL.
         """
-        user_id = kwargs['user_id']
+        self.user_id = kwargs['user_id']  # noqa
         post_id = kwargs['post_id']
-        self.users_instance = get_object_or_404(User, pk=user_id, is_active=True)  # noqa
+
+        self.users_instance = get_object_or_404(User, pk=self.user_id, is_active=True)  # noqa
         self.user = request.user  # noqa
         self.next_page_post_detail = reverse_lazy('post_detail', kwargs={'pk': post_id})  # noqa
         return super().setup(request, *args, **kwargs)
@@ -372,25 +344,36 @@ class FollowUserView(MustBeLogingCustomView):
         """
         Handles the POST request for following or unfollowing a user.
 
-        Checks if a relation already exists between the users.If it exists, unfollows the user; otherwise, creates a new
-        relation to follow the user.
+        Checks if a relation already exists between the users. If it exists, unfollows the user;
+        otherwise, creates a new relation to follow the user.
         """
-        relation = Relation.objects.filter(
-            followers=self.user,
-            following=self.users_instance,
-        )
+        user_profile = get_object_or_404(Profile, pk=self.user_id, user__is_active=True)
+
+        relation = Relation.objects.filter(followers=self.user, following=self.users_instance, is_follow=True)
+
         if relation.exists():
             relation.delete()
-            messages.success(request, f"You are unfollowing {self.users_instance}.")
+            message = f"You have unfollowed {user_profile.user.username}."
+            is_following = False
         else:
             Relation.objects.create(
                 followers=self.user,
                 following=self.users_instance,
                 is_follow=True
             )
-            messages.success(request, f"You are now following {self.users_instance}.")
+            message = f"You are now following {user_profile.user.username}."
+            is_following = True
 
-        return redirect(self.next_page_post_detail)
+        followers_count = user_profile.user.followers_count()
+
+        response_data = {
+            'success': True,
+            'message': message,
+            'followers_count': followers_count,
+            'is_following': is_following,
+        }
+
+        return JsonResponse(response_data)
 
 
 class PostLikeView(MustBeLogingCustomView):
@@ -417,14 +400,23 @@ class PostLikeView(MustBeLogingCustomView):
         Checks if the user has already liked the post. If not, creates a new like. If yes, removes the like.
         """
         like = Vote.objects.filter(post=self.post, user=self.user)  # noqa
+
         if not like.exists():
             like.create(post=self.post, user=self.user)
-            messages.success(request, f"You have liked this post {self.post.title}")
-            return redirect(self.next_page_explorer_post_id)
+            message = f"You have liked this post {self.post.title}"
         else:
             like.delete()
-            messages.success(request, f"You have removed your like from this post {self.post.title}")
-            return redirect(self.next_page_explorer_post_id)
+            message = f"You have removed your like from this post {self.post.title}"
+
+        likes_count = self.post.likes_count()
+        post_id = self.post.id
+        response_data = {
+            'message': message,
+            'likes_count': likes_count,
+            'post_id': post_id
+        }
+
+        return JsonResponse(response_data)
 
 
 class CommentLikeView(MustBeLogingCustomView):
@@ -436,7 +428,6 @@ class CommentLikeView(MustBeLogingCustomView):
     def setup(self, request, *args, **kwargs):
         """
         Initializes necessary attributes for the view.
-
         Sets up the next page URL, user instance, and the comment instance.
         """
         self.next_page_explorer_post_id = reverse_lazy('post_detail', kwargs={'pk': kwargs['post_id']})  # noqa
@@ -445,18 +436,24 @@ class CommentLikeView(MustBeLogingCustomView):
         return super().setup(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
-        """ Handles the GET request for liking or unliking a comment.
+        """
+        Handles the GET request for liking or unliking a comment.
         Checks if the user has already liked the comment. If not, creates a new like. If yes, removes the like.
         """
         like = CommentLike.objects.filter(comment=self.comment, user=self.user)  # noqa
         if not like.exists():
             like.create(comment=self.comment, user=self.user)
-            messages.success(request, f"You have liked this comment {self.comment.comments}")
-            return redirect(self.next_page_explorer_post_id)
+            message = f"You have liked this comment: {self.comment.comments}"
         else:
             like.delete()
-            messages.success(request, f"You have removed your like from this comment {self.comment.comments}")
-            return redirect(self.next_page_explorer_post_id)
+            message = f"You have removed your like from this comment: {self.comment.comments}"
+
+        response_data = {
+            'message': message,
+            'comment_id': self.comment.id,
+        }
+
+        return JsonResponse(response_data)
 
 
 class ReplyCommentLike(MustBeLogingCustomView):
@@ -471,23 +468,28 @@ class ReplyCommentLike(MustBeLogingCustomView):
 
         Sets up the next page URL, user instance, and the reply comment instance.
         """
-        self.next_page_explorer_post_id = reverse_lazy('post_detail', kwargs={'pk': kwargs['post_id']})
-        self.user = request.user
-        self.reply_comment = get_object_or_404(Comment, pk=kwargs['reply_comment_id'])
-        return super().setup(request, *args, **kwargs)
+        self.next_page_explorer_post_id = reverse_lazy('post_detail', kwargs={'pk': kwargs['post_id']})  # noqa
+        self.user = request.user  # noqa
+        self.reply_comment = get_object_or_404(Comment, pk=kwargs['reply_comment_id'])  # noqa
+        return super().setup(request, *args, **kwargs)  # noqa
 
     def get(self, request, *args, **kwargs):
         """ Handles the GET request for liking or unliking a reply to a comment.
         Checks if the user has already liked the reply comment. If not, creates a new like. If yes, removes the like.
         """
-        like = CommentLike.objects.filter(comment=self.reply_comment, user=self.user)
+        like = CommentLike.objects.filter(comment=self.reply_comment, user=self.user)  # noqa
+
         if not like.exists():
             like.create(comment=self.reply_comment, user=self.user)
-            messages.success(request, f"You have liked this reply: {self.reply_comment.comments}")
+            message = f"You have liked this reply: {self.reply_comment.comments}"
         else:
             like.delete()
-            messages.success(request, f"You have removed your like from this reply: {self.reply_comment.comments}")
-        return redirect(self.next_page_explorer_post_id)
+            message = f"You have removed your like from this reply: {self.reply_comment.comments}"
+        response_data = {
+            'message': message,
+            'reply_comment_id': self.reply_comment.id
+        }
+        return JsonResponse(response_data)
 
 
 class DeletePostView(MustBeLogingCustomView):
@@ -504,6 +506,7 @@ class DeletePostView(MustBeLogingCustomView):
     http_method_names = ['get', 'post']
 
     def setup(self, request, *args, **kwargs):
+        """Initialize the template_delete_post, next_page_show_post, post_instance, get_post."""
         self.template_delete_post = 'post/delete_post.html'  # noqa
         self.next_page_show_post = reverse_lazy('show_post', kwargs={'pk': kwargs['pk']})  # noqa
         self.post_instance = get_object_or_404(Post, pk=kwargs['pk'])  # noqa
