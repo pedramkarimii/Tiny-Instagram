@@ -20,7 +20,7 @@
                 <tbody>
                 {% if request.user.is_authenticated %}
                     <tr class="bg-white text-gray-800">
-                        <td class="px-4 py-2 text-center">{{ request.user.username }}</td>
+                        <td class="px-4 py-2 text-center">{{ profile.user.username }}</td>
                         <td class="px-4 py-2 text-center">{{ profile.bio | safe }}</td>
                         <td class="px-4 py-2 text-center">{{ profile.full_name }}</td>
                         <td class="px-4 py-2 text-center">{{ profile.name }}</td>
@@ -57,7 +57,7 @@
                             <div>{{ following_username }}</div>
                         {% endfor %}
                     </td>
-                <td class="px-4 py-2 text-center"> {{ profile.post_count }} </td>
+                    <td class="px-4 py-2 text-center"> {{ profile.post_count }} </td>
                 </tr>
 
             </table>
@@ -74,97 +74,3 @@
         </style>
     {% endblock %}
 {% endblock %}
-
-{##}
-{##}
-{#{% extends "base/bases.html" %} {% block title %}#}
-{#    <title>Info account</title>#}
-{#{% endblock %} {% block info_account %}#}
-{##}
-{#    <div class="container mx-auto mb-8 mt-8">#}
-{#        <div class="overflow-x-auto">#}
-{#            <table class="table-auto w-full mt-8 rounded-lg border border-gray-300">#}
-{#                <thead>#}
-{#                <tr class="bg-gray-200 text-gray-700">#}
-{#                    <th class="px-4 py-2 text-center">Username</th>#}
-{#                    <th class="px-4 py-2 text-center">Bio</th>#}
-{#                    <th class="px-4 py-2 text-center">Full Name</th>#}
-{#                    <th class="px-4 py-2 text-center">Name</th>#}
-{#                    <th class="px-4 py-2 text-center">Last Name</th>#}
-{#                    <th class="px-4 py-2 text-center">Gender</th>#}
-{#                    <th class="px-4 py-2 text-center">Age</th>#}
-{#                </tr>#}
-{#                </thead>#}
-{#                <tbody>#}
-{#                {% if request.user.is_authenticated %}#}
-{#                    <tr class="bg-white text-gray-800">#}
-{#                        <td class="px-4 py-2 text-center">{{ request.user.username }}</td>#}
-{#                        <td class="px-4 py-2 text-center">{{ profile.bio | safe }}</td>#}
-{#                        <td class="px-4 py-2 text-center">{{ profile.full_name }}</td>#}
-{#                        <td class="px-4 py-2 text-center">{{ profile.name }}</td>#}
-{#                        <td class="px-4 py-2 text-center">{{ profile.last_name }}</td>#}
-{#                        <td class="px-4 py-2 text-center">{{ profile.gender }}</td>#}
-{#                        <td class="px-4 py-2 text-center">{{ profile.age }}</td>#}
-{#                    </tr>#}
-{#                {% endif %}#}
-{#                </tbody>#}
-{#            </table>#}
-{##}
-{##}
-{##}
-{#        </div>#}
-{#    </div>#}
-{#{% endblock %}#}
-{##}
-{#{% block custom_css %}#}
-{#    <style>#}
-{#        th {#}
-{#            border-bottom: 2px solid rgba(118, 118, 118, 0.31); /* Add a solid black border bottom to th elements */#}
-{#        }#}
-{#    </style>#}
-{#{% endblock %}#}
-
-
-{#{% extends "base/bases.html" %}#}
-{##}
-{#{% block title %}#}
-{#    <title>All Profiles</title>#}
-{#{% endblock %}#}
-{##}
-{#{% block info_account %}#}
-{#    <div class="container mx-auto mb-8 mt-8">#}
-{#        <div class="overflow-x-auto">#}
-{#            <table class="table-auto w-full mt-8 rounded-lg border border-gray-300">#}
-{#                <thead>#}
-{#                    <tr class="bg-gray-200 text-gray-700">#}
-{#                        <th class="px-4 py-2 text-center">Username</th>#}
-{#                        <th class="px-4 py-2 text-center">Bio</th>#}
-{#                        <th class="px-4 py-2 text-center">Posts</th>#}
-{#                        <th class="px-4 py-2 text-center">Followers</th>#}
-{#                        <th class="px-4 py-2 text-center">Following</th>#}
-{#                    </tr>#}
-{#                </thead>#}
-{#                <tbody>#}
-{#                    {% for profile in profiles %}#}
-{#                        <tr class="bg-white text-gray-800">#}
-{#                            <td class="px-4 py-2 text-center">{{ profile.user.username }}</td>#}
-{#                            <td class="px-4 py-2 text-center">{{ profile.bio | safe }}</td>#}
-{#                            <td class="px-4 py-2 text-center">{{ profile.post_set.count }}</td>#}
-{#                            <td class="px-4 py-2 text-center">{{ profile.followers_count }}</td>#}
-{#                            <td class="px-4 py-2 text-center">{{ profile.following_count }}</td>#}
-{#                        </tr>#}
-{#                    {% endfor %}#}
-{#                </tbody>#}
-{#            </table>#}
-{#        </div>#}
-{#    </div>#}
-{#{% endblock %}#}
-{##}
-{#{% block custom_css %}#}
-{#    <style>#}
-{#        th {#}
-{#            border-bottom: 2px solid rgba(118, 118, 118, 0.31);#}
-{#        }#}
-{#    </style>#}
-{#{% endblock %}#}
-

@@ -13,6 +13,10 @@ class SearchForm(forms.Form):
 
 
 class ImageForm(forms.ModelForm):
+    """
+    Form for uploading images.
+    """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['images'].widget.attrs['multiple'] = True
@@ -21,6 +25,19 @@ class ImageForm(forms.ModelForm):
         model = Image
         fields = ['images']
         widgets = {'images': ClearableFileInput()}
+
+
+# class ImageUploadForm(forms.Form):
+#     def __init__(self, num_images=1, *args, **kwargs):
+#         super(ImageUploadForm, self).__init__(*args, **kwargs)
+#
+#         num_images = min(max(num_images, 1), 10)  # Ensure num_images is between 1 and 10
+#         for i in range(1, num_images + 1):
+#             self.fields[f'image_{i}'] = forms.ImageField(label=f'Image {i}')
+#
+#     def clean(self):
+#         cleaned_data = super().clean()
+#         return cleaned_data
 
 
 class UpdatePostForm(forms.ModelForm):
@@ -43,6 +60,9 @@ class UpdatePostForm(forms.ModelForm):
         fields = ['body', 'title']
 
     def clean_body(self):
+        """
+        Validates the body of the post.
+        """
         body = self.cleaned_data.get('body')
         if len(body) < 1:
             raise forms.ValidationError('Body must be at least 1 character long.')
@@ -51,6 +71,9 @@ class UpdatePostForm(forms.ModelForm):
         return body
 
     def clean_title(self):
+        """
+        Validates the title of the post.
+        """
         title = self.cleaned_data.get('title')
         if len(title) < 1:
             raise forms.ValidationError('Title must be at least 1 character long.')
@@ -87,6 +110,9 @@ class CreatCommentForm(forms.ModelForm):
         fields = ('comments', 'reply', 'is_reply')
 
     def clean_body(self):
+        """
+        Validates the body of the comment.
+        """
         body = self.cleaned_data.get('body')
         if len(body) < 1:
             raise forms.ValidationError('Body must be at least 1 character long.')

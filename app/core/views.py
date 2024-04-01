@@ -64,7 +64,7 @@ class ContactUsView(View):
 
             if self.authenticate_user:
                 # Send email
-                self.user = User.objects.filter(email=form.cleaned_data['email'])
+                self.user = User.objects.filter(email=form.cleaned_data['email'])  # noqa
                 if self.user:
                     subject = 'New message from Tiny Instagram'
                     message = 'You have received a new message.\n\nName: {}\nEmail: {}\nMessage: {}'.format(

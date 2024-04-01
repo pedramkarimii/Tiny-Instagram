@@ -6,4 +6,7 @@ class PostConfig(AppConfig):
     name = 'app.post'
 
     def ready(self):
+        """
+        Override the ready method to import signals when the application is ready.
+        """
         from app.post import signals

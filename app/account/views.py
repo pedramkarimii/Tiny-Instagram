@@ -609,41 +609,30 @@ class CreateProfileView(MustBeLogingCustomView):
 
 class ProfileDetailView(DetailView, MustBeLogingCustomView):
     """
-    Defines a view for displaying user profile details.
-    Requires user login for access.
-    Handles GET requests only.
-    Sets up necessary attributes such as model, context object name, and template.
-    Defines a method to retrieve the profile object associated with the logged-in user.
-    Overrides the get_context_data method to include additional context data such as follower and following counts.
+    setup method:
+    Sets up the view by defining the model, context object name, and template name.
+
+    get_object method:
+    Retrieves the profile object based on the user ID passed in the URL kwargs.
+
+    get_context_data method:
+    Adds additional context data to be passed to the template, including counts of followers and following users,
+     as well as lists of followers' and following users' usernames.
     """
 
     http_method_names = ['get']
 
     def setup(self, request, *args, **kwargs):
-        """
-        Sets up the view by defining the model, context object name, and template name.
-        """
         self.model = Profile  # noqa
         self.context_object_name = 'profile'  # noqa
         self.template_name = 'accounts/profile_detail.html'  # noqa
         return super().setup(request, *args, **kwargs)
 
     def get_object(self, queryset=None):
-        """
-        Overrides the get_object method to retrieve the profile object associated with the logged-in user.
-        """
-
-        profile_get_object = Profile.objects.get(user=self.request.user)
-        return get_object_or_404(User, pk=self.kwargs['pk']) and profile_get_object
+        user_id = self.kwargs.get('pk')
+        return get_object_or_404(Profile, user_id=user_id)
 
     def get_context_data(self, **kwargs):
-        """
-        Overrides the get_context_data method to add additional context data.
-        Retrieves follower and following counts for the profile user.
-        Retrieves lists of follower and following usernames.
-        Adds the counts and usernames to the context.
-        """
-
         context = super().get_context_data(**kwargs)
         profile = self.get_object()
 

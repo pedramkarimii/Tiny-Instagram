@@ -89,7 +89,6 @@ class Image(models.Model):
     - verbose_name: Sets the display name for a single Image object.
     - verbose_name_plural: Sets the display name for multiple Image objects.
     - get_latest_by: Specifies the field to use for retrieving the latest Image object.
-    - constraints: Defines a unique constraint on owner_image and images.
     - indexes: Defines indexes for owner_image and images fields.
     - archive: Returns all objects, including deleted and inactive ones.
     - get_queryset_object: Returns the queryset object associated with this manager.
@@ -111,9 +110,6 @@ class Image(models.Model):
         verbose_name = 'Image'
         verbose_name_plural = 'Images'
         get_latest_by = '-create_time'
-        constraints = [
-            models.UniqueConstraint(fields=['post_image', 'images'], name='unique_post_imagee__images')
-        ]
         indexes = [
             models.Index(fields=['post_image', 'images'], name='index_post_image_images')
         ]
@@ -143,8 +139,8 @@ class Comment(models.Model):
     - verbose_name: Sets the display name for a single Comment object.
     - verbose_name_plural: Sets the display name for multiple Comment objects.
     - get_latest_by: Specifies the field to use for retrieving the latest Comment object.
-    - constraints: Defines constraints for uniqueness of owner, post, and comments fields.
     - indexes: Defines indexes for owner and post fields.
+    - count_comment_like: Returns the number of likes (votes) on the comment.
     """
     owner = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='user_comments')
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='post_comments')

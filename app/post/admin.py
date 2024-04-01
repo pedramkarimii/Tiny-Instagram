@@ -2,20 +2,6 @@ from django.contrib import admin
 from .models import Post, Comment, Vote, Image, CommentLike
 
 
-class CommentInline(admin.TabularInline):
-    """
-    Defines an inline admin option for the Comment model, which allows comments to be displayed inline within
-        the admin interface when viewing posts.
-    Specifies the model to be used for the inline comments, sets whether comments can be deleted inline, and
-        provides options for customizing the display, such as the verbose name for plural comments and the foreign
-        key name linking comments to posts.
-    """
-    model = Comment
-    can_delete = False
-    verbose_name_plural = 'Comment'
-    fk_name = 'post'
-
-
 class VoteInline(admin.TabularInline):
     """
     Defines an inline admin option for the Vote model, allowing votes to be displayed inline within the admin
@@ -44,7 +30,15 @@ class VoteAdmin(admin.ModelAdmin):
 
 
 class CommentLikeInline(admin.TabularInline):
+    """
+    Defines an inline admin option for the CommentLike model, allowing comment likes to be displayed inline
+        within the admin interface when viewing comments.
+    Specifies the model for the inline comment likes, sets whether comment likes can be deleted inline, and
+        provides options for customizing the display, such as the verbose name for plural comment likes and the
+        foreign key name linking comment likes to comments.
+    """
     model = CommentLike
+    can_delete = False  # noqa
     verbose_name_plural = 'CommentLike'
     fk_name = 'comment'
     ordering = ('-create_time',)
@@ -53,6 +47,11 @@ class CommentLikeInline(admin.TabularInline):
 
 @admin.register(CommentLike)
 class CommentLikeAdmin(admin.ModelAdmin):
+    """
+    Registers the CommentLike model with the admin interface.
+    Specifies the display options for the CommentLike model in the admin interface, including the fields to be
+        displayed in the list view, filters, search fields, ordering, and row ID fields.
+    """
     list_display = ('user', 'comment', 'create_time')
     list_filter = ('user', 'comment')
     search_fields = ['user', 'comment']
@@ -61,6 +60,13 @@ class CommentLikeAdmin(admin.ModelAdmin):
 
 
 class ImageInline(admin.TabularInline):
+    """
+    Defines an inline admin option for the Image model, allowing images to be displayed inline within the admin
+        interface when viewing posts.
+    Specifies the model for the inline images, sets whether images can be deleted inline, provides options for
+        customizing the display, such as the verbose name for plural images, the foreign key name linking images to
+        posts, and the ordering for the images.
+    """
     model = Image
     can_delete = False
     fk_name = 'post_image'
@@ -73,9 +79,54 @@ class ImageInline(admin.TabularInline):
 
 @admin.register(Image)
 class ImageAdmin(admin.ModelAdmin):
+    """
+    Registers the Image model with the admin interface.
+    Specifies the display options for the Image model in the admin interface, including the fields to be displayed
+        in the list view, filters, search fields, ordering, and row ID fields.
+    """
     list_display = ('post_image', 'images', 'is_active', 'create_time', 'update_time')
     list_filter = ('is_active',)
     search_fields = ('post_image__username', 'create_time', 'update_time')
+
+
+class CommentInline(admin.TabularInline):
+    """
+    Defines an inline admin option for the Comment model, which allows comments to be displayed inline within
+        the admin interface when viewing posts.
+    Specifies the model to be used for the inline comments, sets whether comments can be deleted inline, and
+        provides options for customizing the display, such as the verbose name for plural comments and the foreign
+        key name linking comments to posts.
+    """
+    model = Comment
+    can_delete = False
+    verbose_name_plural = 'Comment'
+    fk_name = 'post'
+
+
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    """
+    Registers the Comment model with the admin interface.
+    Specifies the display options for the Comment model in the admin interface, including the fields to be
+        displayed in the list view, filters, search fields, ordering, and row ID fields.
+    """
+    list_display = ('owner', 'post', 'create_time', 'is_reply')
+    list_filter = ('owner', 'post')
+    search_fields = ['owner', 'post']
+    ordering = ('-update_time', '-create_time')
+    row_id_fields = ('owner', 'post', 'reply')
+    inlines = (CommentLikeInline,)
+
+    def get_inline_instances(self, request, obj=None):
+        """
+        Overrides the get_inline_instances method to conditionally display inline instances based on whether an
+            object is being edited.
+        If no object is provided, returns an empty list to prevent inline instances from being displayed.
+        Otherwise, calls the parent class's get_inline_instances method to retrieve inline instances.
+        """
+        if not obj:
+            return list()
+        return super(CommentAdmin, self).get_inline_instances(request, obj)
 
 
 @admin.register(Post)
@@ -103,29 +154,3 @@ class PostAdmin(admin.ModelAdmin):
         if not obj:
             return list()
         return super(PostAdmin, self).get_inline_instances(request, obj)
-
-
-@admin.register(Comment)
-class CommentAdmin(admin.ModelAdmin):
-    """
-    Registers the Comment model with the admin interface.
-    Specifies the display options for the Comment model in the admin interface, including the fields to be
-        displayed in the list view, filters, search fields, ordering, and row ID fields.
-    """
-    list_display = ('owner', 'post', 'create_time', 'is_reply')
-    list_filter = ('owner', 'post')
-    search_fields = ['owner', 'post']
-    ordering = ('-update_time', '-create_time')
-    row_id_fields = ('owner', 'post', 'reply')
-    inlines = (CommentLikeInline,)
-
-    def get_inline_instances(self, request, obj=None):
-        """
-        Overrides the get_inline_instances method to conditionally display inline instances based on whether an
-            object is being edited.
-        If no object is provided, returns an empty list to prevent inline instances from being displayed.
-        Otherwise, calls the parent class's get_inline_instances method to retrieve inline instances.
-        """
-        if not obj:
-            return list()
-        return super(CommentAdmin, self).get_inline_instances(request, obj)
