@@ -1,8 +1,7 @@
 from ckeditor.widgets import CKEditorWidget
 from django import forms
 from django.forms.widgets import TextInput
-from .models import Post, Comment, Image
-from django.forms import ClearableFileInput
+from .models import Post, Comment
 
 
 class SearchForm(forms.Form):
@@ -12,41 +11,18 @@ class SearchForm(forms.Form):
     search = forms.CharField(label='Search', max_length=100)
 
 
-class ImageForm(forms.ModelForm):
-    """
-    Form for uploading images.
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['images'].widget.attrs['multiple'] = True
-
-    class Meta:
-        model = Image
-        fields = ['images']
-        widgets = {'images': ClearableFileInput()}
-
-
-# class ImageUploadForm(forms.Form):
-#     def __init__(self, num_images=1, *args, **kwargs):
-#         super(ImageUploadForm, self).__init__(*args, **kwargs)
-#
-#         num_images = min(max(num_images, 1), 10)  # Ensure num_images is between 1 and 10
-#         for i in range(1, num_images + 1):
-#             self.fields[f'image_{i}'] = forms.ImageField(label=f'Image {i}')
-#
-#     def clean(self):
-#         cleaned_data = super().clean()
-#         return cleaned_data
-
-
 class UpdatePostForm(forms.ModelForm):
     """
     Form for updating a post.
     """
-    title = forms.CharField(label='Title', required=True, widget=TextInput(attrs={
-        'class': 'mt-1 mb-8 pt-2 py-2 px-4 focus:ring-indigo-500 focus:border-indigo-500 block w-full'
-                 ' shadow-sm sm:text-sm border-gray-300 rounded-md'}))
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['Image'].widget.attrs['multiple'] = True
+
+    title = forms.CharField(label='Title', required=True, widget=TextInput(
+        attrs={'class': 'mt-1 mb-8 pt-2 py-2 px-4 focus:ring-indigo-500 focus:border-indigo-500 block w-full'
+                        ' shadow-sm sm:text-sm border-gray-300 rounded-md'}))
     body = forms.CharField(label='Body',
                            required=True, widget=CKEditorWidget(attrs={'class': 'mt-1 mb-4 pt-2 py-2 px-4 '
                                                                                 'focus:ring-indigo-500 '

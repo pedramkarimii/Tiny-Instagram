@@ -258,16 +258,15 @@ class CreatePostView(MustBeLogingCustomView):
         if form.is_valid():
             post = form.save(commit=False)
             post.owner = Profile.objects.get(user=self.request_user)
-            post.save()
+
             if 'Image' in self.request_files:
-                image = Image(post_image=post, images=self.request_files['Image'])
-                image.save()
+                post.save()
+                images = self.request_files.getlist('Image')
+                for image in images:
+                    Image.objects.create(post_image=post, images=image)
 
-                messages.success(request, 'Post created successfully with image!')
-            else:
-                messages.success(request, 'Post created successfully!')
-
-            return redirect(reverse_lazy('create_post'))
+                messages.success(request, f'Post created successfully {post.title}')
+                return redirect(reverse_lazy('create_post'))
         else:
             messages.error(request, 'Failed to create post')
             return render(request, 'post/create_post.html', {'form': form})
@@ -307,11 +306,11 @@ class UpdatePostView(MustBeLogingCustomView):
         if form.is_valid():
             posts = form.save(commit=False)
             posts.owner = Profile.objects.get(user=self.request_user)
-            posts.save()
             if 'Image' in self.request_files:
-                image = Image(post_image=posts, images=self.request_files['Image'])
-                image.save()
-                messages.success(request, 'Post updated successfully')
+                posts.save()
+                images = self.request_files.getlist('Image')
+                for image in images:
+                    Image.objects.get_or_create(post_image=posts, images=image)
                 return redirect(self.next_page_show_post)
             else:
                 messages.error(request, 'Failed to update post add or change post picture')
