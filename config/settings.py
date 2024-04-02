@@ -35,7 +35,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # 'core.middlewares.LoginRequiredMiddleware',
+    'app.core.middlewares.LoginRequiredMiddleware',
 
 ]
 
@@ -122,7 +122,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-LOG_FILE_PATH = '/app/core/info.log'
+LOG_FILE_PATH = 'app.core.info.log'
 
 # Configures email settings for sending emails via SMTP using Gmail.
 # Specifies the SMTP server host, port, username, password, and TLS settings.
