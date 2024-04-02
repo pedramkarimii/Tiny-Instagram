@@ -24,29 +24,31 @@
                         <div>
                             <div id="follow-container">
                                 {% if request.user.profile.pk != post.owner.user.profile.pk and is_following %}
-                                     <form class="follow-btn" id="unfollow-form"
-              action="{% url 'follow_user' user_id=post.owner.user.profile.pk post_id=post.id %}"
-              method="post">
-            {% csrf_token %}
-            <input type="hidden" name="user_id" value="{{ post.owner.user.profile.pk }}">
-            <input type="hidden" name="post_id" value="{{ post.id }}">
-            <button data-user-id="{{ post.owner.user.profile.pk }}" data-post-id="{{ post.id }}"
-                    type="submit" class="text-red-600 font-semibold">
-                Unfollow
-            </button>
-        </form>
+                                    <form class="follow-btn" id="unfollow-form"
+                                          action="{% url 'follow_user' user_id=post.owner.user.pk post_id=post.id %}"
+                                          method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="user_id" value="{{ post.owner.user.profile.pk }}">
+                                        <input type="hidden" name="post_id" value="{{ post.id }}">
+                                        <button data-user-id="{{ post.owner.user.profile.pk }}"
+                                                data-post-id="{{ post.id }}"
+                                                type="submit" class=" text-red-600 font-semibold">
+                                            Unfollow
+                                        </button>
+                                    </form>
                                 {% elif request.user.profile.pk != post.owner.user.profile.pk and is_following == False %}
                                     <form class="follow-btn" id="follow-form"
-              action="{% url 'follow_user' user_id=post.owner.user.profile.pk post_id=post.id %}"
-              method="post">
-            {% csrf_token %}
-            <input type="hidden" name="user_id" value="{{ post.owner.user.profile.pk }}">
-            <input type="hidden" name="post_id" value="{{ post.id }}">
-            <button data-user-id="{{ post.owner.user.profile.pk }}" data-post-id="{{ post.id }}"
-                    type="submit" class="text-blue-600 font-semibold follow-count">
-                Follow {{ post.owner.user.followers_count }}
-            </button>
-        </form>
+                                          action="{% url 'follow_user' user_id=post.owner.user.pk post_id=post.id %}"
+                                          method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="user_id" value="{{ post.owner.user.profile.pk }}">
+                                        <input type="hidden" name="post_id" value="{{ post.id }}">
+                                        <button data-user-id="{{ post.owner.user.profile.pk }}"
+                                                data-post-id="{{ post.id }}"
+                                                type="submit" class="  text-blue-600 font-semibold follow-count">
+                                            Follow
+                                        </button>
+                                    </form>
                                 {% endif %}
 
                             </div>
@@ -331,71 +333,42 @@
                 });
             });
         });
-        {# $(document).ready(function () {#}
-        {#    // Handle follow/unfollow button click#}
-        {#    $('.follow-container').on('click', '.follow-btn', function (e) {#}
-        {#        e.preventDefault();#}
-        {#        var followBtn = $(this);#}
-        {#        var userId = followBtn.data('user-id');#}
-        {#        var postId = followBtn.data('post-id');#}
-        {#        var isFollowing = followBtn.hasClass('unfollow-btn');#}
-        {##}
-        {#        $.ajax({#}
-        {#            type: 'POST',#}
-        {#            url: '/follow_user/' + userId + '/', // Adjust this URL to match your follow/unfollow endpoint#}
-        {#            data: {#}
-        {#                'csrfmiddlewaretoken': $('input[name="csrfmiddlewaretoken"]').val(),#}
-        {#                'user_id': userId,#}
-        {#                'post_id': postId,#}
-        {#                'is_following': isFollowing ? 'False' : 'True' // Send whether user is currently following or not#}
-        {#            },#}
-        {#            dataType: 'json',#}
-        {#            success: function () {#}
-        {#                // Toggle button class for follow/unfollow#}
-        {#                followBtn.toggleClass('follow-btn unfollow-btn');#}
-        {#                // Update button text#}
-        {#                if (isFollowing) {#}
-        {#                    followBtn.text('Follow');#}
-        {#                    alert('You have unfollowed the user');#}
-        {#                } else {#}
-        {#                    followBtn.text('Unfollow');#}
-        {#                    alert('You are now following the user');#}
-        {#                }#}
-        {#            },#}
-        {#            error: function (xhr, status, error) {#}
-        {#                console.error(xhr.responseText);#}
-        {#            }#}
-        {#        });#}
-        {#    });#}
-$(document).ready(function () {
-    $('.follow-btn').submit(function (e) {
-        e.preventDefault();
 
-        var form = $(this);
-        var formData = form.serialize();
+        $(document).ready(function () {
+            $('.follow-btn').submit(function (e) {
+                e.preventDefault();
 
-        $.ajax({
-            type: form.attr('method'),
-            url: form.attr('action'),
-            data: formData,
-            dataType: 'json',
-            success: function (data) {
-                if (data.success) {
-                    var followButton = form.find('button');
-                    followButton.text(data.is_following ? 'Unfollow' : 'Follow');
-                    followButton.removeClass(data.is_following ? 'text-blue-600' : 'text-red-600');
-                    followButton.addClass(data.is_following ? 'text-red-600' : 'text-blue-600');
-                    $('.follow-count').text('Follow ' + data.followers_count);
-                } else {
-                    console.error('Failed to follow/unfollow user');
-                }
-            },
-            error: function (xhr, status, error) {
-                console.error('AJAX request failed:', error);
-            }
+                var form = $(this);
+                var formData = form.serialize();
+
+                $.ajax({
+                    type: form.attr('method'),
+                    url: form.attr('action'),
+                    data: formData,
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data.success) {
+                            var followButton = form.find('button');
+                            if (data.is_following) {
+                                followButton.text('Unfollow');
+                                followButton.removeClass('text-blue-600').addClass('text-red-600');
+                            } else {
+                                followButton.text('Follow');
+                                followButton.removeClass('text-red-600').addClass('text-blue-600');
+                            }
+
+                            alert(data.message);
+
+                        } else {
+                            console.error('Failed to follow/unfollow user');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('AJAX request failed:', error);
+                    }
+                });
+            });
         });
-    });
-});
 
 
     </script>

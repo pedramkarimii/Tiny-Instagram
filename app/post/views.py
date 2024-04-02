@@ -237,6 +237,7 @@ class CreatePostView(MustBeLogingCustomView):
         self.form_class = UpdatePostForm  # noqa
         self.template_create_post = 'post/create_post.html'  # noqa
         self.next_page_create_post = reverse_lazy('create_post')  # noqa
+        self.next_page_create_profile = reverse_lazy('create_profile')  # noqa
         self.request_files = request.FILES  # noqa
         self.request_user = request.user  # noqa
         self.request_post = request.POST  # noqa
@@ -249,7 +250,7 @@ class CreatePostView(MustBeLogingCustomView):
 
     def get(self, request):
         if not self.user_profile and self.user_profile == None:  # noqa
-            return redirect(self.next_page_home)
+            return redirect(self.next_page_create_profile)
         """Render the form for creating a post."""
         return render(request, self.template_create_post, {'form': self.form_class()})
 
@@ -332,11 +333,10 @@ class FollowUserView(MustBeLogingCustomView):
         Sets up the user instance to follow/unfollow and defines the next page URL.
         """
         self.user_id = kwargs['user_id']  # noqa
-        post_id = kwargs['post_id']
-
+        self.post_id = kwargs['post_id']  # noqa
         self.users_instance = get_object_or_404(User, pk=self.user_id, is_active=True)  # noqa
         self.user = request.user  # noqa
-        self.next_page_post_detail = reverse_lazy('post_detail', kwargs={'pk': post_id})  # noqa
+        self.next_page_post_detail = reverse_lazy('post_detail', kwargs={'pk': self.post_id})  # noqa
         return super().setup(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
@@ -346,29 +346,25 @@ class FollowUserView(MustBeLogingCustomView):
         Checks if a relation already exists between the users. If it exists, unfollows the user;
         otherwise, creates a new relation to follow the user.
         """
-        user_profile = get_object_or_404(Profile, pk=self.user_id, user__is_active=True)
 
         relation = Relation.objects.filter(followers=self.user, following=self.users_instance, is_follow=True)
 
         if relation.exists():
             relation.delete()
-            message = f"You have unfollowed {user_profile.user.username}."
+            message = f"You have unfollowed {self.users_instance.username}."
             is_following = False
         else:
-            Relation.objects.create(
+            Relation.objects.get_or_create(
                 followers=self.user,
                 following=self.users_instance,
                 is_follow=True
             )
-            message = f"You are now following {user_profile.user.username}."
+            message = f"You are now following {self.users_instance.username}."
             is_following = True
-
-        followers_count = user_profile.user.followers_count()
 
         response_data = {
             'success': True,
             'message': message,
-            'followers_count': followers_count,
             'is_following': is_following,
         }
 
