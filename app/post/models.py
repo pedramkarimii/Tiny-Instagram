@@ -30,7 +30,7 @@ class Post(models.Model):
     - get_latest_by: Specifies the field to use for retrieving the latest Post object.
     - indexes: Defines indexes for owner and title fields.
     """
-    owner = models.ForeignKey(Profile, on_delete=models.NullBooleanField, related_name='posts')
+    owner = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='posts')
     body = RichTextField()
     title = models.CharField(max_length=255)
     is_deleted = models.BooleanField(default=False)
@@ -93,7 +93,7 @@ class Image(models.Model):
     - archive: Returns all objects, including deleted and inactive ones.
     - get_queryset_object: Returns the queryset object associated with this manager.
     """
-    post_image = models.ForeignKey(Post, on_delete=models.PROTECT, related_name='images')
+    post_image = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='images')
     images = models.ImageField(upload_to=image_upload_path_mixin)
     is_deleted = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
