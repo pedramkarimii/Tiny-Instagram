@@ -1,6 +1,5 @@
 from ckeditor.widgets import CKEditorWidget
 from django import forms
-from django.forms.widgets import TextInput
 from .models import Post, Comment
 
 
@@ -20,15 +19,6 @@ class UpdatePostForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['Image'].widget.attrs['multiple'] = True
 
-    title = forms.CharField(label='Title', required=True, widget=TextInput(
-        attrs={'class': 'mt-1 mb-8 pt-2 py-2 px-4 focus:ring-indigo-500 focus:border-indigo-500 block w-full'
-                        ' shadow-sm sm:text-sm border-gray-300 rounded-md'}))
-    body = forms.CharField(label='Body',
-                           required=True, widget=CKEditorWidget(attrs={'class': 'mt-1 mb-4 pt-2 py-2 px-4 '
-                                                                                'focus:ring-indigo-500 '
-                                                                                'focus:border-indigo-500 block w-full '
-                                                                                'shadow-sm sm:text-sm border-gray-300 '
-                                                                                'rounded-md'}))
     Image = forms.ImageField(label='Post Image', required=True)
 
     class Meta:
