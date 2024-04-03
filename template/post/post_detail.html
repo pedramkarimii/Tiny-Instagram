@@ -134,7 +134,7 @@
                                                   cols="50"></textarea>
                                         <button type="submit" class="text-blue-600">Reply</button>
                                     </form>
-                                    {% if comment.owner.user == request.user %}
+                                    {% if comment.owner.user == request.user or  post.owner.user.username ==  request.user.username %}
                                         <form action="{% url 'delete_comment' comment.id %}" method="post"
                                               style="display: inline;">
                                             {% csrf_token %}
@@ -190,7 +190,7 @@
                                               cols="50"></textarea>
                                     <button type="submit" class="text-blue-600">Reply</button>
                                 </form>
-                                {% if reply.owner.user == request.user and reply.owner.user ==  reply.owner.user %}
+                                {% if reply.owner.user == request.user and reply.owner.user ==  reply.owner.user or  post.owner.user.username ==  request.user.username %}
                                     <form action="{% url 'delete_comment' reply.id %}" method="post"
                                           style="display: inline;">
                                         {% csrf_token %}
