@@ -641,10 +641,11 @@ class ProfileDetailView(DetailView, MustBeLogingCustomView):
         context['followers_count'] = followers_count
         context['following_count'] = following_count
 
-        followers_usernames = Relation.objects.filter(following=profile.user).values_list('followers__username',
-                                                                                          flat=True)
-        following_usernames = Relation.objects.filter(followers=profile.user).values_list('following__username',
-                                                                                          flat=True)
+        followers_usernames = Relation.objects.filter(following=profile.user).values_list('followers__id',
+                                                                                          'followers__username')
+        following_usernames = Relation.objects.filter(followers=profile.user).values_list('following__id',
+                                                                                          'following__username')
+
         context['followers_usernames'] = followers_usernames
         context['following_usernames'] = following_usernames
 

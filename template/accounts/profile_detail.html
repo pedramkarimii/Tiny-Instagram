@@ -1,6 +1,6 @@
 {% extends "base/bases.html" %}
 {% block title %}
-    <title>Profile - {{ request.user.username }}</title>
+    <title>Profile {{ profile.user.username }}</title>
 {% endblock %}
 {% block info_account %}
     <div class="container mx-auto mb-8 mt-8">
@@ -48,14 +48,30 @@
                 <tr class="bg-white text-gray-800">
                     <td class="px-4 py-2 text-center">
 
-                        {% for follower_username in followers_usernames %}
-                            <div>{{ follower_username }}</div>
+                        {% for follower_user_id, follower_username in followers_usernames %}
+                            <div>
+                                <a href="{% url 'profile_detail' pk=follower_user_id %}">
+                                    <p class="pt-4"> {{ follower_username }}
+                                    </p>
+                                    <hr/>
+                                </a>
+                            </div>
                         {% endfor %}
+
                     </td>
-                    <td class="px-4 py-2 text-center">
-                        {% for following_username in following_usernames %}
-                            <div>{{ following_username }}</div>
+                    <td class="mt-4 pt-4 pb-4 px-4 py-2 text-center">
+
+
+                        {% for followers_user_id, following_username in following_usernames %}
+                            <div>
+                                <a href="{% url 'profile_detail' pk=followers_user_id %}">
+                                    <p class="pt-4"> {{ following_username }}</p>
+                                    <hr/>
+                                </a>
+
+                            </div>
                         {% endfor %}
+
                     </td>
                     <td class="px-4 py-2 text-center"> {{ profile.post_count }} </td>
                 </tr>
