@@ -28,6 +28,10 @@
 
         <div class="max-w-7xl mx-auto grid grid-cols-3 gap-4 ">
             {% for post in posts %}
+
+                {% if  post.is_deleted == False %}
+
+
                 <!-- Single Post -->
                 <div class=" grid bg-gray-300 shadow-lg rounded-lg  mb-8 mt-4">
                     <!-- Header -->
@@ -43,7 +47,15 @@
                                     </h2>
                                     <p class="text-sm text-gray-600">{{ user.profile.bio | safe }}</p>
                                 </div>
+
                             </div>
+                            <div >
+                                {% if post.is_active  %}
+                                <a href="{% url 'hide_post' pk=post.id %}"><p class="text-md font-semibold text-gray-800 hover:text-gray-400">Hide Post </p></a>
+                                {% else %}
+                                    <a href="{% url 'hide_post' pk=post.id %}"><p class="text-md font-semibold text-red-800 hover:text-red-400">Reveal Post </p></a>
+                                {% endif %}
+                                </div>
                         </div>
                     </div>
                     <!-- Content -->
@@ -59,6 +71,7 @@
                                             </a>
                                         </div>
                                     {% endfor %}
+
                                 </div>
                                 <button class="carousel-prev absolute top-1/2 left-4 transform -translate-y-1/2 text-red-800 rounded-full px-3 py-1 focus:outline-none">
                                     &#10094;
@@ -94,6 +107,7 @@
                     </div>
 
                 </div>
+                {% endif %}
 
             {% endfor %}
         </div>

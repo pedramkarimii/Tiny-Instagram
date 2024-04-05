@@ -1,6 +1,6 @@
 from django.urls import path
 from app.post.views import HomePostView, UpdatePostView, DeletePostView, Explorer, CreatePostView, FollowUserView, \
-    PostLikeView, PostDetailView, ReplyCommentView, DeleteCommentView, CommentLikeView, ReplyCommentLike
+    PostLikeView, PostDetailView, ReplyCommentView, DeleteCommentView, CommentLikeView, ReplyCommentLike, HidePostView
 
 """
 Defines URL patterns for the application.
@@ -26,7 +26,7 @@ urlpatterns = [
 
     # Post related URLs
     path('createpost/', CreatePostView.as_view(), name='create_post'),
-
+    path('hide_post/<int:pk>/', HidePostView.as_view(), name='hide_post'),  # noqa
     path('show_post/<int:pk>/', HomePostView.as_view(), name='show_post'),
     path('post_detail/<int:pk>/', PostDetailView.as_view(), name='post_detail'),
     path('post/<int:pk>/update/', UpdatePostView.as_view(), name='update_post'),

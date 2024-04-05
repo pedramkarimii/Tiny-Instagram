@@ -21,7 +21,7 @@ class HomePostView(MustBeLogingCustomView):
     - form_class_search (SearchForm): The form class for searching posts.
     - posts (QuerySet): The queryset of posts filtered by the current user and not deleted.
     """
-    http_method_names = ['get', 'post']
+    http_method_names = ['get']
 
     def setup(self, request, *args, **kwargs):
         """
@@ -30,8 +30,7 @@ class HomePostView(MustBeLogingCustomView):
         self.template_posts = 'post/posts.html'  # noqa
         self.form_class_search = SearchForm  # noqa
         self.request_user_profile = request.user.profile  # noqa
-        self.posts = Post.objects.filter(owner=self.request_user_profile, is_deleted=False)  # noqa
-
+        self.posts = Post.objects.archive().filter(owner=self.request_user_profile, is_deleted=False)  # noqa
         return super().setup(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
@@ -78,7 +77,7 @@ class Explorer(MustBeLogingCustomView):
            Finally,it combines the search results and user posts into a list of tuples and renders the explorer template
            """
         form_search = self.form_class_search(request.GET)
-        post_search = Post.objects.all()
+        post_search = Post.objects.all().filter(is_active=True)
 
         if form_search.is_valid():
             search_query = form_search.cleaned_data.get('search')
@@ -145,6 +144,34 @@ class PostDetailView(MustBeLogingCustomView, DetailView):
                                              'pk': post.pk}))
         else:
             return self.render_to_response(self.get_context_data(form=form))
+
+
+class HidePostView(MustBeLogingCustomView):
+    """
+    View for hiding a post or Reveal Post.
+    """
+    http_method_names = ['get', 'post']
+
+    def setup(self, request, *args, **kwargs):
+        """Initialize the template_explorer, request_user_profile, post_id, get_post."""
+        self.template_explorer = 'post/posts.html'  # noqa
+        self.request_user_profile = request.user.profile  # noqa
+        self.post_id = kwargs.get('pk')  # noqa
+        self.get_post = Post.objects.archive().filter(owner=self.request_user_profile, is_deleted=False)  # noqa
+        return super().setup(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        post = self.get_post.get(id=self.post_id)
+        if post.is_active:
+            post.is_active = False
+            post.save()
+            messages.success(request, f"You have hidden this post {post.title}")
+        else:
+            post.is_active = True
+            post.save()
+            messages.success(request, f"You have unhidden this post {post.title}")
+
+        return redirect(reverse_lazy('show_post', kwargs={'pk': post.pk}))
 
 
 class DeleteCommentView(MustBeLogingCustomView):
