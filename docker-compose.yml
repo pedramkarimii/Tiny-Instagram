@@ -1,0 +1,80 @@
+services:
+  redis:
+    container_name: redis
+    image: redis:alpine
+    restart: always
+    ports:
+      - "6377:6379"
+    volumes:
+      - ./volumes/redis/:/var/lib/redistinyinsta/data/tinyinsta/
+
+  db:
+    container_name: postgres
+    image: postgres:alpine
+    restart: always
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_PORT=${DB_PORT}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - ./volumes/db/:/var/lib/postgresqltinyinsta/data/tinyinsta/
+    depends_on:
+      - redis
+
+  application:
+    env_file:
+      - ./.env
+    build:
+      context: .
+      dockerfile: utility/Dockerfile
+    restart: always
+    command: >
+      sh -c '
+      rm -rf db.sqlite3 &&
+      find . -path "*/migrations/*.py" -not -name "__init__.py" -delete &&
+      python manage.py wait_for_db &&
+      python manage.py wait_for_redis &&
+      python manage.py makemigrations --noinput &&
+      python manage.py migrate --noinput &&
+      python manage.py collectstatic --noinput &&
+      python manage.py creat_a_super_user &&
+      gunicorn --bind 0.0.0.0:${API_PORT} config.wsgi:application --log-level ${API_LOG_LEVEL} --workers ${API_WORKERS} --threads ${API_THREADS} --access-logfile "logs/backend.logs" --error-logfile "logs/errors.logs"
+      '
+    volumes:
+      - ./utility:/app/utility
+      - ./logs/application/:/app/logs/
+      - ./volumes/storage/:/app/storage/
+    ports:
+      - "${API_PORT}:${API_PORT}"
+    depends_on:
+      - db
+
+  nginx:
+    build:
+      context: .
+      dockerfile: utility/nginx/Dockerfile
+    restart: always
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - ./logs/nginx/:/var/log/nginx/
+      - ./volumes/storage/:/shared/
+      - ./utility/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./utility/nginx/proxy_dhparams/:/vol/proxy/
+      - ./volumes/certbot/www/:/vol/www/
+      - ./volumes/certbot/certs/:/etc/letsencrypt/
+    depends_on:
+      - application
+
+  certbot:
+    build:
+      context: .
+      dockerfile: utility/certbot/Dockerfile
+    command: echo "Certbot | Skipping ..."
+    volumes:
+      - ./volumes/certbot/www/:/vol/www/
+      - ./volumes/certbot/certs/:/etc/letsencrypt/
+    depends_on:
+      - nginx
