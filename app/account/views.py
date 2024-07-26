@@ -3,7 +3,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 import pytz
 from django.contrib import messages
-from django.contrib.auth import logout, update_session_auth_hash
+from django.contrib.auth import logout, update_session_auth_hash, authenticate
 from django.contrib.auth import login
 from .forms import UserLoginForm, UserPasswordResetForm, UserLoginEmailForm
 from django.shortcuts import render, redirect, get_object_or_404
@@ -89,6 +89,7 @@ class UserLoginView(MustBeLogoutCustomView):
         """Initialize the form, next_page_login_verify_code, next_page_login, next_page_home,
          template_name, template name."""
         self.form = UserLoginForm  # noqa
+        self.next_page_success_login = reverse_lazy('success_login') # noqa
         self.next_page_login_verify_code = reverse_lazy('login_verify_code')  # noqa
         self.next_page_login = reverse_lazy('login')  # noqa
         self.template_login = 'accounts/login.html'  # noqa
@@ -101,6 +102,7 @@ class UserLoginView(MustBeLogoutCustomView):
          """
         return render(request, self.template_login, {'form': self.form()})
 
+
     def post(self, request):
         """
         Handle POST requests to process the login form submission.
@@ -110,21 +112,11 @@ class UserLoginView(MustBeLogoutCustomView):
         """
         form = self.form(request.POST)
         if form.is_valid():
-            request.session['user_login_info'] = {
-                'phone_number': form.cleaned_data['phone_number'],
-                'password': form.cleaned_data['password'],
-            }
             phone_number = form.cleaned_data['phone_number']
-            user = User.objects.filter(phone_number=phone_number).exists()
-            if user:
-                random_code = random.randint(1000, 9999)
-                send_otp_code(phone_number, random_code)
-                OptCode.objects.create(phone_number=phone_number, code=random_code)
-                messages.success(request, 'Code sent to your phone number', extra_tags='success')
-                return redirect(self.next_page_login_verify_code)
-            else:
-                messages.error(request, 'Phone number or password is not valid', extra_tags='error')
-                return redirect(self.next_page_login)
+            user_password = form.cleaned_data['password']
+            user = authenticate(request, phone_number=phone_number, password=user_password)
+            login(request, user)
+            return redirect(self.next_page_success_login)
         return render(request, self.template_login, {'form': form})
 
 
@@ -231,6 +223,14 @@ class UserRegisterView(MustBeLogoutCustomView):
        """
         return render(request, self.template_create_user, {'form': self.form_class()})
 
+    def send_otp_email(self, email, otp):
+        subject = 'Your OTP for Verification'
+        message = f'Your OTP for login is (Expiry date two minutes): {otp}'
+        from_email = settings.EMAIL_HOST_USER
+        recipient_list = [email]
+        send_mail(subject, message, from_email, recipient_list)
+        OptCode.objects.create(email=email, code=otp)
+
     def post(self, request):
         """
         Handle POST requests to process the user registration form submission.
@@ -248,7 +248,8 @@ class UserRegisterView(MustBeLogoutCustomView):
                 'username': form.cleaned_data['username'],
                 'password': form.cleaned_data['password2'],
             }
-            messages.success(request, 'Code sent to your phone number', extra_tags='success')
+            self.send_otp_email(email=form.cleaned_data['email'], otp=random_code)
+            messages.success(request, 'Code sent to your Email', extra_tags='success')
             return redirect(self.next_page_verify_code)
 
         return render(request, self.template_create_user, {'form': form})
@@ -297,7 +298,6 @@ class UserRegistrationVerifyCodeView(MustBeLogoutCustomView):
                         username=user_session['username'],
                         password=user_session['password'],
                     )
-
                 code_instance.delete()
                 code_instance.is_used = True
                 messages.success(request, 'User created successfully', extra_tags='success')
@@ -372,7 +372,7 @@ class UserLoginEmailView(MustBeLogoutCustomView):
             from_email = settings.EMAIL_HOST_USER
             recipient_list = [email]
             send_mail(subject, message, from_email, recipient_list)
-            OptCode.objects.create(email=email, code=otp)
+
             messages.success(self.request, 'Code sent to your Email', extra_tags='success')
         elif not user:
             messages.success(self.request, 'Invalid email or password', extra_tags='success')
@@ -394,6 +394,7 @@ class UserLoginEmailView(MustBeLogoutCustomView):
                 'email': form.cleaned_data['email'],
                 'password': form.cleaned_data['password'],
             }
+            OptCode.objects.get_or_create(email=email, code=random_code)
             return redirect(self.next_page_login_verify_code_email)
 
         return render(request, self.template_login_email, {'form': form})
