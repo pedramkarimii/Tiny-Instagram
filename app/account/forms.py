@@ -50,6 +50,10 @@ class UserLoginForm(CleanPassword):
         pattern = r"09(1[0-9]|3[0-9]|2[0-9]|0[1-9]|9[0-9])[0-9]{7}$"
         if not re.match(pattern, phone_number):
             raise forms.ValidationError("Invalid phone number or password.")
+        try:
+            user = User.objects.get(phone_number=phone_number)  # noqa
+        except User.DoesNotExist:
+            raise forms.ValidationError("Invalid phone number or password.")
         user = User.objects.get(phone_number=phone_number)
         if user:
             return phone_number
@@ -70,7 +74,6 @@ class UserLoginForm(CleanPassword):
                 raise forms.ValidationError("Invalid phone number or password.")
             if not check_password(password, user.password):
                 raise forms.ValidationError("Invalid phone number or password.")
-
         return cleaned_data
 
 
