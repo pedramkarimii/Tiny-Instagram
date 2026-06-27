@@ -1,23 +1,31 @@
-[tool.poetry]
+[project]
 name = "tiny-instagram"
 version = "0.1.0"
-description = ""
-authors = ["pedramkarimii <pedram@9060.com>"]
+description = "Dockerized Django social platform for backend portfolio development."
 readme = "README.md"
+requires-python = ">=3.12,<3.14"
+authors = [
+    { name = "Pedram Karimi" },
+]
+dependencies = [
+    "Django==5.2.15",
+    "django-jazzmin==3.0.5",
+    "psycopg2-binary==2.9.12",
+    "Pillow==12.2.0",
+    "python-decouple==3.8",
+    "django-ckeditor==6.7.3",
+    "pytz==2024.2",
+    "kavenegar==1.1.2",
+    "redis==5.3.1",
+    "gunicorn==23.0.0",
+]
 
-[tool.poetry.dependencies]
-python = "^3.12"
-django = "^5.0.7"
-django-jazzmin = "^3.0.0"
-psycopg2-binary = "^2.9.9"
-pillow = "^10.4.0"
-python-decouple = "^3.8"
-django-ckeditor = "^6.7.1"
-pytz = "^2024.1"
-kavenegar = "^1.1.2"
-redis = "^5.0.7"
+[tool.poetry]
+package-mode = false
 
+[tool.poetry.requires-plugins]
+poetry-plugin-export = ">=1.8"
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"

@@ -1,26 +1,32 @@
 services:
   redis:
-    container_name: redis
-    image: redis:alpine
-    restart: always
-    ports:
-      - "6377:6379"
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
     volumes:
-      - ./volumes/redis/:/var/lib/redistinyinsta/data/tinyinsta/
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
 
   db:
-    container_name: postgres
-    image: postgres:alpine
-    restart: always
+    image: postgres:16-alpine3.23
+    restart: unless-stopped
     environment:
-      - POSTGRES_DB=${DB_NAME}
-      - POSTGRES_PORT=${DB_PORT}
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - ./volumes/db/:/var/lib/postgresqltinyinsta/data/tinyinsta/
-    depends_on:
-      - redis
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   application:
     env_file:
@@ -28,53 +34,82 @@ services:
     build:
       context: .
       dockerfile: utility/Dockerfile
-    restart: always
-    command: >
-      sh -c '
-      rm -rf db.sqlite3 &&
-      find . -path "*/migrations/*.py" -not -name "__init__.py" -delete &&
-      python manage.py wait_for_db &&
-      python manage.py wait_for_redis &&
-      python manage.py makemigrations --noinput &&
-      python manage.py migrate --noinput &&
-      python manage.py collectstatic --noinput &&
-      python manage.py creat_a_super_user &&
-      gunicorn --bind 0.0.0.0:${API_PORT} config.wsgi:application --log-level ${API_LOG_LEVEL} --workers ${API_WORKERS} --threads ${API_THREADS} --access-logfile "logs/backend.logs" --error-logfile "logs/errors.logs"
-      '
+    image: tiny-instagram-app:local
+    restart: unless-stopped
+    command:
+      - gunicorn
+      - --bind
+      - 0.0.0.0:8000
+      - config.wsgi:application
+      - --log-level
+      - ${API_LOG_LEVEL:-info}
+      - --workers
+      - ${API_WORKERS:-2}
+      - --threads
+      - ${API_THREADS:-2}
+      - --access-logfile
+      - "-"
+      - --error-logfile
+      - "-"
+    expose:
+      - "8000"
     volumes:
-      - ./utility:/app/utility
-      - ./logs/application/:/app/logs/
-      - ./volumes/storage/:/app/storage/
-    ports:
-      - "${API_PORT}:${API_PORT}"
+      - static_data:/app/storage/static_collected
+      - media_data:/app/storage/media
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import socket; socket.create_connection(('127.0.0.1', 8000), 3).close()",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   nginx:
+    environment:
+      DOMAIN_NAME: ${DOMAIN_NAME:-localhost}
     build:
       context: .
       dockerfile: utility/nginx/Dockerfile
-    restart: always
+    restart: unless-stopped
     ports:
-      - "443:443"
-      - "80:80"
+      - "${NGINX_BIND_ADDRESS:-127.0.0.1}:${NGINX_HTTP_HOST_PORT:-8081}:80"
+      - "${NGINX_BIND_ADDRESS:-127.0.0.1}:${NGINX_HTTPS_HOST_PORT:-8444}:443"
     volumes:
-      - ./logs/nginx/:/var/log/nginx/
-      - ./volumes/storage/:/shared/
-      - ./utility/nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./utility/nginx/proxy_dhparams/:/vol/proxy/
-      - ./volumes/certbot/www/:/vol/www/
-      - ./volumes/certbot/certs/:/etc/letsencrypt/
+      - static_data:/shared/static_collected:ro
+      - media_data:/shared/media:ro
+      - certbot_www:/vol/www
+      - certbot_certs:/etc/letsencrypt
     depends_on:
-      - application
+      application:
+        condition: service_healthy
 
   certbot:
+    profiles: ["certbot"]
     build:
       context: .
       dockerfile: utility/certbot/Dockerfile
-    command: echo "Certbot | Skipping ..."
+    command: echo "Certbot profile enabled"
     volumes:
-      - ./volumes/certbot/www/:/vol/www/
-      - ./volumes/certbot/certs/:/etc/letsencrypt/
+      - certbot_www:/vol/www
+      - certbot_certs:/etc/letsencrypt
     depends_on:
-      - nginx
+      nginx:
+        condition: service_started
+
+volumes:
+  media_data:
+  static_data:
+  certbot_certs:
+  certbot_www:
+  postgres_data:
+  redis_data:

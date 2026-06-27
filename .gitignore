@@ -542,3 +542,14 @@ pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python,pycharm,django,flask,database,redis,jetbrains+all,ssh
 
+
+
+# Local runtime artifacts
+.env.*
+!.env.example
+logs/
+volumes/
+storage/media/
+storage/static_collected/
+storage/aws/
+.poetry/
