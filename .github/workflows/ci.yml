@@ -1,0 +1,131 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  django:
+    name: Django checks, tests, and audit
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: tiny_instagram
+          POSTGRES_USER: tiny_instagram
+          POSTGRES_PASSWORD: tiny-instagram-ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tiny_instagram -d tiny_instagram"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7.4-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DEBUG: "true"
+      SECRET_KEY: ci-only-secret-not-for-production-please-change
+      TIME_ZONE: UTC
+      ALLOWED_HOSTS: localhost,127.0.0.1
+      CSRF_TRUSTED_ORIGINS: http://localhost
+      DB_NAME: tiny_instagram
+      DB_USER: tiny_instagram
+      DB_PASSWORD: tiny-instagram-ci
+      DB_HOST: 127.0.0.1
+      DB_PORT: "5432"
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: "6379"
+      DEFAULT_FILE_STORAGE: django.core.files.storage.FileSystemStorage
+      LOG_FILE_PATH: /tmp/tiny-instagram-ci.log
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Validate installed dependencies
+        run: python -m pip check
+
+      - name: Run Django checks
+        run: python manage.py check
+
+      - name: Validate production configuration
+        env:
+          DEBUG: "false"
+          SECRET_KEY: ci-only-production-secret-value-that-is-not-real
+          ALLOWED_HOSTS: example.test
+          CSRF_TRUSTED_ORIGINS: https://example.test
+        run: python manage.py check --deploy
+
+      - name: Detect migration drift
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Validate migration plan
+        run: python manage.py migrate --plan
+
+      - name: Run tests
+        run: python manage.py test
+
+      - name: Audit dependencies
+        run: |
+          python -m pip install pip-audit
+          pip-audit -r requirements.txt
+
+  containers:
+    name: Docker Compose smoke test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Prepare local environment
+        run: cp .env.example .env
+
+      - name: Validate Compose configuration
+        run: docker compose config --quiet
+
+      - name: Build and start services
+        run: docker compose up -d --build --wait application nginx
+
+      - name: Verify Nginx response
+        run: curl --fail --retry 10 --retry-delay 2 http://127.0.0.1:8081/
+
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Clean up Compose resources
+        if: always()
+        run: docker compose down --volumes --remove-orphans

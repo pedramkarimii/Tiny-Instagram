@@ -1,20 +1,12 @@
-#!/bin/bash
+#!/bin/sh
+set -eu
 
-set -e
+domain="${DOMAIN_NAME:-localhost}"
 
-echo "Checking for dhparams.pem"
-if [ ! -f "/vol/proxy/ssl-dhparams.pem" ]; then
-  echo "ssl-dhparams.pem does not found, creating ..."
-  openssl dhparam -out /vol/proxy/ssl-dhparams.pem 1024
-fi
-
-echo "Checking for fullchain.pem"
-if [ ! -f "/etc/letsencrypt/live/tiny-insta.ir/fullchain.pem" ]; then
-  echo "No SSL certification, HTTP Mode Enabled !"
-  cat /etc/nginx/default.conf.template > /etc/nginx/conf.d/default.conf
+if [ -f "/etc/letsencrypt/live/${domain}/fullchain.pem" ]; then
+    sed "s/__DOMAIN_NAME__/${domain}/g" /etc/nginx/default-ssl.conf.template > /etc/nginx/conf.d/default.conf
 else
-  echo "SSL cert exists, HTTPS Mode Enabled !"
-  cat /etc/nginx/default-ssl.conf.template > /etc/nginx/conf.d/default.conf
+    cp /etc/nginx/default.conf.template /etc/nginx/conf.d/default.conf
 fi
 
-nginx-debug -g "daemon off;"
+exec nginx -g "daemon off;"

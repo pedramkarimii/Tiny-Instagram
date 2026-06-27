@@ -1,12 +1,10 @@
-FROM nginx:stable-alpine
+FROM nginx:1.30.3-alpine3.23
 
-USER root
+COPY ./utility/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY ./utility/nginx/default.conf.template /etc/nginx/default.conf.template
+COPY ./utility/nginx/default-ssl.conf.template /etc/nginx/default-ssl.conf.template
+COPY ./utility/nginx/entrypoint.sh /entrypoint.sh
 
-RUN apk add --update openssl bash
-
-COPY ./default-ssl.conf.template /etc/nginx/default-ssl.conf.template
-COPY ./default.conf.template /etc/nginx/default.conf.template
-COPY ./entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-CMD ["/entrypoint.sh"]
+ENTRYPOINT ["/entrypoint.sh"]
